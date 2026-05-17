@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+enum SourceChannel {
+  web
+  official_account
+}
+
+enum SourceType {
+  image
+  text
+  link
+}
+
+enum IngestionStatus {
+  received
+  processing
+  processed
+  failed
+}
+
+enum CardStatus {
+  draft
+  saved
+  archived
+  deleted
+}
+
+enum CardVisibility {
+  private
+  link_visible
+  public
+  paid
+}
+
+enum StorageType {
+  temp
+  permanent
+}
+
+enum FileType {
+  image
+  pdf
+  voice
+  doc
+}
+
+enum FileStatus {
+  active
+  deleted
+  expired
+}
+
+enum UsageType {
+  ocr
+  llm_input
+  llm_output
+  image_upload
+  card_generate
+  link_fetch
+}
+
+model User {
+  id           String           @id @default(cuid())
+  email        String           @unique
+  passwordHash String
+  nickname     String?
+  avatarUrl    String?
+  status       UserStatus       @default(active)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  profile      UserProfile?
+  ingestions   IngestionItem[]
+  cards        Card[]
+  files        File[]
+  usageLedgers UsageLedger[]
+}
+
+model UserProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  primaryUseCase        String?
+  defaultPerspective    String?
+  preferredOutputLength String?
+  defaultSaveMode       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model IngestionItem {
+  id               String            @id @default(cuid())
+  userId           String
+  sourceChannel    SourceChannel     @default(web)
+  sourceType       SourceType
+  rawText          String?
+  rawUrl           String?
+  tempFileId       String?
+  status           IngestionStatus   @default(received)
+  errorMessage     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  processingResult ProcessingResult?
+}
+
+model ProcessingResult {
+  id                  String        @id @default(cuid())
+  ingestionItemId     String        @unique
+  normalizedText      String
+  extractedTitle      String?
+  sourceMetadata      Json?
+  detectedLanguage    String?
+  detectedContentType String?
+  ocrConfidence       Float?
+  createdAt           DateTime      @default(now())
+  ingestionItem       IngestionItem @relation(fields: [ingestionItemId], references: [id], onDelete: Cascade)
+}
+
+model Card {
+  id           String         @id @default(cuid())
+  userId       String
+  title        String
+  summary      String
+  keyPoints    Json
+  actionItems  Json
+  tags         Json
+  category     String
+  cardType     String
+  perspective  String
+  sourceType   SourceType
+  sourceUrl    String?
+  sourceTitle  String?
+  sourceDomain String?
+  aiTemplateId String
+  status       CardStatus     @default(draft)
+  visibility   CardVisibility @default(private)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model File {
+  id          String      @id @default(cuid())
+  userId      String
+  storageType StorageType @default(temp)
+  fileType    FileType
+  objectKey   String
+  sizeBytes   Int
+  mimeType    String
+  status      FileStatus  @default(active)
+  expireAt    DateTime?
+  createdAt   DateTime    @default(now())
+  deletedAt   DateTime?
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UsageLedger {
+  id           String    @id @default(cuid())
+  userId       String
+  usageType    UsageType
+  taskType     String
+  modelTier    String
+  provider     String
+  modelName    String
+  inputTokens  Int       @default(0)
+  outputTokens Int       @default(0)
+  quantity     Int       @default(1)
+  unit         String
+  costEstimate Decimal   @default(0) @db.Decimal(10, 6)
+  relatedId    String?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
