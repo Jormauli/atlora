@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { recordUsage } from "@/lib/services/usage/service";
 
@@ -8,6 +9,13 @@ export async function createDraftCard(input: {
     summary: string;
     key_points: string[];
     action_items: string[];
+    framework_structure?: string[];
+    critical_evidence?: string[];
+    reusable_insights?: string[];
+    used_models?: string[];
+    connections?: string[];
+    role_perspectives?: string[];
+    localized_content?: Record<string, unknown> | null;
     tags: string[];
     category: string;
     card_type: string;
@@ -19,6 +27,9 @@ export async function createDraftCard(input: {
   sourceUrl?: string | null;
   templateId: string;
 }) {
+  const localizedContent = input.generated.localized_content
+    ? input.generated.localized_content as Prisma.InputJsonValue
+    : undefined;
   const card = await prisma.card.create({
     data: {
       userId: input.userId,
@@ -26,6 +37,13 @@ export async function createDraftCard(input: {
       summary: input.generated.summary,
       keyPoints: input.generated.key_points,
       actionItems: input.generated.action_items,
+      frameworkStructure: input.generated.framework_structure ?? [],
+      criticalEvidence: input.generated.critical_evidence ?? [],
+      reusableInsights: input.generated.reusable_insights ?? [],
+      usedModels: input.generated.used_models ?? [],
+      connections: input.generated.connections ?? [],
+      rolePerspectives: input.generated.role_perspectives ?? [],
+      localizedContent,
       tags: input.generated.tags,
       category: input.generated.category,
       cardType: input.generated.card_type,

@@ -132,6 +132,8 @@ TENCENT_OCR_REGION=ap-guangzhou
 OCR_MONTHLY_FREE_QUOTA=1000
 OCR_USAGE_WARNING_THRESHOLD=800
 OCR_USAGE_CRITICAL_THRESHOLD=950
+IMAGE_OCR_MIN_CONFIDENCE=0.55
+IMAGE_OCR_MIN_CHARS=20
 ```
 
 当前实现使用腾讯云 `GeneralBasicOCR`。每次成功调用后都会写入 `UsageLedger`，并在 `/usage` 与 `/settings` 展示本月 OCR 已用量、剩余额度和提醒状态。
@@ -150,9 +152,42 @@ OCR_USAGE_CRITICAL_THRESHOLD=950
 WECHAT_ARTICLE_PYTHON=/path/to/python
 WECHAT_ARTICLE_TOOL_DIR=/path/to/wechat-article-for-ai
 WECHAT_SCREENSHOT_OCR_MIN_CONFIDENCE=0.85
+WECHAT_SCREENSHOT_OCR_ATTEMPTS=2
 ```
 
 截图 OCR 会做质量门槛判断；当页面渲染出乱码字形、OCR 置信度不足或文本质量过低时，不会生成低质量卡片，而会继续退化为待读链接卡。
+
+## 个人微信实验入口
+
+个人微信自动化不适合作为正式产品依赖，但可以先用本地桥接方式试效果。任何个人微信 bot / 桌面自动化脚本只要把收到的消息 POST 到接口即可：
+
+```text
+POST /api/inbox/wechat-personal
+Authorization: Bearer <WECHAT_PERSONAL_WEBHOOK_TOKEN>
+Content-Type: application/json
+
+{
+  "sender": "微信昵称或备注",
+  "text": "用户发来的文本或公众号链接",
+  "receivedAt": "2026-05-19T00:00:00.000Z"
+}
+```
+
+本地配置：
+
+```bash
+WECHAT_PERSONAL_WEBHOOK_TOKEN=本地共享密钥
+WECHAT_PERSONAL_DEFAULT_USER_EMAIL=demo@example.com
+WECHAT_PERSONAL_ENDPOINT=http://127.0.0.1:3000/api/inbox/wechat-personal
+```
+
+本地模拟一条个人微信消息：
+
+```bash
+npm run wechat:personal:test -- "这是一条从个人微信入口转发来的测试消息"
+```
+
+如果消息里包含 URL，系统会按链接素材处理；没有 URL 时会按文本素材处理。后续接真实个人微信时，只需要让适配器调用这个接口。
 
 ## 当前边界
 

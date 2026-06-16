@@ -18,6 +18,8 @@ export interface WeChatFetchResult {
   ocrConfidence?: number;
 }
 
+const screenshotAttemptCount = parsePositiveInteger(process.env.WECHAT_SCREENSHOT_OCR_ATTEMPTS, 2);
+
 export function isWeChatArticleUrl(url: string) {
   try {
     const parsed = new URL(url);
@@ -95,39 +97,61 @@ async function tryMarkdownExtraction(url: string) {
 async function tryScreenshotOCR(input: { userId: string; url: string; relatedId: string }) {
   const python = process.env.WECHAT_ARTICLE_PYTHON;
   if (!python) return null;
-  const screenshotPath = path.join(os.tmpdir(), `wechat-shot-${Date.now()}.png`);
-  try {
-    await execFileAsync(python, [path.join(process.cwd(), "scripts/capture_wechat_article.py"), input.url, screenshotPath], {
-      timeout: 120000
-    });
-    const ocr = await getOCRProvider().extractText({
-      id: `wechat-shot-${input.relatedId}`,
-      path: screenshotPath,
-      mimeType: "image/png"
-    });
-    const minConfidence = Number(process.env.WECHAT_SCREENSHOT_OCR_MIN_CONFIDENCE ?? 0.85);
-    if (ocr.confidence < minConfidence || !looksLikeUsableArticleText(ocr.text)) return null;
-    await recordUsage({
-      userId: input.userId,
-      usageType: "ocr",
-      taskType: "vision_analysis",
-      provider: process.env.OCR_PROVIDER ?? "mock",
-      modelName: process.env.OCR_PROVIDER ?? "mock",
-      relatedId: input.relatedId
-    });
-    return {
-      title: firstNonEmptyLine(ocr.text),
-      text: ocr.text,
-      confidence: ocr.confidence
-    };
-  } catch {
-    return null;
-  } finally {
-    await rm(screenshotPath, { force: true });
+  const minConfidence = Number(process.env.WECHAT_SCREENSHOT_OCR_MIN_CONFIDENCE ?? 0.85);
+  let bestCandidate: { text: string; confidence: number } | null = null;
+
+  for (let attempt = 1; attempt <= screenshotAttemptCount; attempt += 1) {
+    const screenshotPath = path.join(os.tmpdir(), `wechat-shot-${input.relatedId}-${attempt}-${Date.now()}.png`);
+    try {
+      await execFileAsync(python, [path.join(process.cwd(), "scripts/capture_wechat_article.py"), input.url, screenshotPath], {
+        timeout: 120000
+      });
+      const ocr = await getOCRProvider().extractText({
+        id: `wechat-shot-${input.relatedId}-${attempt}`,
+        path: screenshotPath,
+        mimeType: "image/png"
+      });
+      if (!bestCandidate || ocr.confidence > bestCandidate.confidence) {
+        bestCandidate = ocr;
+      }
+      if (ocr.confidence < minConfidence || !looksLikeUsableArticleText(ocr.text)) continue;
+      await recordScreenshotOCRUsage(input);
+      return {
+        title: firstNonEmptyLine(ocr.text),
+        text: ocr.text,
+        confidence: ocr.confidence
+      };
+    } catch {
+      continue;
+    } finally {
+      await rm(screenshotPath, { force: true });
+    }
   }
+
+  if (bestCandidate && bestCandidate.confidence >= minConfidence && looksLikeUsableArticleText(bestCandidate.text)) {
+    await recordScreenshotOCRUsage(input);
+    return {
+      title: firstNonEmptyLine(bestCandidate.text),
+      text: bestCandidate.text,
+      confidence: bestCandidate.confidence
+    };
+  }
+
+  return null;
 }
 
-function parseMarkdown(raw: string) {
+async function recordScreenshotOCRUsage(input: { userId: string; relatedId: string }) {
+  await recordUsage({
+    userId: input.userId,
+    usageType: "ocr",
+    taskType: "vision_analysis",
+    provider: process.env.OCR_PROVIDER ?? "mock",
+    modelName: process.env.OCR_PROVIDER ?? "mock",
+    relatedId: input.relatedId
+  });
+}
+
+export function parseMarkdown(raw: string) {
   const withoutFrontmatter = raw.replace(/^---[\s\S]*?---\s*/m, "");
   const lines = withoutFrontmatter.split("\n");
   const titleLine = lines.find((line) => line.startsWith("# "));
@@ -141,13 +165,18 @@ function parseMarkdown(raw: string) {
   return text ? { title, text } : null;
 }
 
-function firstNonEmptyLine(text: string) {
+export function firstNonEmptyLine(text: string) {
   return text.split("\n").map((line) => line.trim()).find(Boolean);
 }
 
-function looksLikeUsableArticleText(text: string) {
+export function looksLikeUsableArticleText(text: string) {
   const compact = text.replace(/\s+/g, "");
   if (compact.length < 120) return false;
   const chineseChars = compact.match(/[\u4e00-\u9fff]/g)?.length ?? 0;
   return chineseChars / compact.length >= 0.2;
+}
+
+export function parsePositiveInteger(raw: string | undefined, fallback: number) {
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }

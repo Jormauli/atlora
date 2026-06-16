@@ -43,6 +43,13 @@ function serialize(card: Card): SerializableCard {
     ...card,
     keyPoints: card.keyPoints as string[],
     actionItems: card.actionItems as string[],
+    frameworkStructure: (card.frameworkStructure as string[] | null) ?? [],
+    criticalEvidence: (card.criticalEvidence as string[] | null) ?? [],
+    reusableInsights: (card.reusableInsights as string[] | null) ?? [],
+    usedModels: (card.usedModels as string[] | null) ?? [],
+    connections: (card.connections as string[] | null) ?? [],
+    rolePerspectives: (card.rolePerspectives as string[] | null) ?? [],
+    localizedContent: card.localizedContent as SerializableCard["localizedContent"],
     tags: card.tags as string[],
     createdAt: card.createdAt.toISOString(),
     updatedAt: card.updatedAt.toISOString()

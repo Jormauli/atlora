@@ -4,6 +4,13 @@ export interface SerializableCard {
   summary: string;
   keyPoints: string[];
   actionItems: string[];
+  frameworkStructure: string[];
+  criticalEvidence: string[];
+  reusableInsights: string[];
+  usedModels: string[];
+  connections: string[];
+  rolePerspectives: string[];
+  localizedContent: LocalizedCardContent | null;
   tags: string[];
   category: string;
   cardType: string;
@@ -17,4 +24,19 @@ export interface SerializableCard {
   visibility: "private" | "link_visible" | "public" | "paid";
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LocalizedCardContentItem {
+  title?: string;
+  summary?: string;
+  keyPoints?: string[];
+  rolePerspectives?: string[];
+  tags?: string[];
+  category?: string;
+  sourceTitle?: string | null;
+}
+
+export interface LocalizedCardContent {
+  zh?: LocalizedCardContentItem;
+  en?: LocalizedCardContentItem;
 }

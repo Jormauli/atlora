@@ -6,18 +6,12 @@ import { generateCardDraft } from "@/lib/services/ai-orchestration/service";
 import { createDraftCard } from "@/lib/services/card/service";
 import { fetchLinkContent } from "@/lib/services/link-fetcher/service";
 import { recordUsage } from "@/lib/services/usage/service";
+import { parseSelectedContentViews } from "@/lib/content-views";
 
 export function resolveTemplate(templateId: string, defaultPerspective?: string | null) {
   if (templateId !== "auto") return templateId;
-  const map: Record<string, string> = {
-    "内容创作者": "content_creator",
-    "创业者 / 产品人": "startup_product",
-    "投资研究": "investment_info",
-    "工具应用": "tool_app",
-    "学习笔记": "learning_note",
-    "综合摘要": "general_summary"
-  };
-  return map[defaultPerspective ?? ""] ?? "general_summary";
+  const selectedViews = parseSelectedContentViews(defaultPerspective);
+  return selectedViews.length ? `content_view__${selectedViews.join(",")}` : "content_view";
 }
 
 export async function ingestText(input: {
@@ -64,6 +58,9 @@ export async function ingestImage(input: {
   });
   try {
     const ocr = await getOCRProvider().extractText(fileRef);
+    if (!isUsableOCRText(ocr.text, ocr.confidence)) {
+      throw new Error("OCR text quality is too low");
+    }
     await recordUsage({
       userId: input.userId,
       usageType: "ocr",
@@ -100,6 +97,12 @@ export async function ingestImage(input: {
     });
     throw new Error("图片识别失败，请换一张更清晰的截图，或手动输入文本。");
   }
+}
+
+export function isUsableOCRText(text: string, confidence: number) {
+  const minConfidence = Number(process.env.IMAGE_OCR_MIN_CONFIDENCE ?? 0.55);
+  const minChars = Number(process.env.IMAGE_OCR_MIN_CHARS ?? 20);
+  return text.replace(/\s+/g, "").length >= minChars && confidence >= minConfidence;
 }
 
 export async function ingestLink(input: {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { cardPatchSchema } from "@/lib/validators/card";
@@ -16,9 +17,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
   const parsed = cardPatchSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "参数不合法" }, { status: 400 });
+  const data = {
+    ...parsed.data,
+    localizedContent: parsed.data.localizedContent === null ? Prisma.JsonNull : parsed.data.localizedContent
+  };
   const card = await prisma.card.updateMany({
     where: { id: params.id, userId: user.id, status: { not: "deleted" } },
-    data: parsed.data
+    data
   });
   if (!card.count) return NextResponse.json({ error: "未找到" }, { status: 404 });
   return NextResponse.json({ ok: true });

@@ -135,6 +135,13 @@ model Card {
   summary      String
   keyPoints    Json
   actionItems  Json
+  frameworkStructure Json?
+  criticalEvidence   Json?
+  reusableInsights   Json?
+  usedModels         Json?
+  connections        Json?
+  rolePerspectives   Json?
+  localizedContent   Json?
   tags         Json
   category     String
   cardType     String
