@@ -23,3 +23,12 @@ test("secondary pages no longer use white cards as the main surface", () => {
     assert.ok(!source.includes("bg-white p-5"));
   }
 });
+
+test("card editing surfaces stay readable on the dark Atlora shell", () => {
+  for (const file of ["src/components/card-editor.tsx", "src/app/cards/[id]/page.tsx"]) {
+    const source = readFileSync(path.join(root, file), "utf8");
+    assert.ok(source.includes("border-[#354039]"));
+    assert.ok(!source.includes("bg-white"));
+    assert.ok(!source.includes("bg-slate-50"));
+  }
+});
