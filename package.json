@@ -11,6 +11,7 @@
     "wechat:personal:test": "tsx scripts/post_wechat_personal_message.ts",
     "wechat:personal:watch": "tsx scripts/watch_wechat_file_transfer.ts",
     "clipboard:watch": "tsx scripts/watch_clipboard_inbox.ts",
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts"
