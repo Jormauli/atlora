@@ -17,18 +17,19 @@ import { RoleFilterBar } from "./dashboard/role-filter-bar";
 import { SidebarLink } from "./dashboard/sidebar-link";
 
 export function DashboardWorkspace({ cards }: { cards: DashboardCard[] }) {
+  const [visibleCards, setVisibleCards] = useState(cards);
   const [query, setQuery] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>(["all"]);
   const [sort, setSort] = useState<DashboardSort>("desc");
   const [expandedCard, setExpandedCard] = useState<{ cardId: string; rect: CardOriginRect } | null>(null);
 
-  const filters = useMemo(() => buildCardFilters(cards), [cards]);
+  const filters = useMemo(() => buildCardFilters(visibleCards), [visibleCards]);
   const filteredCards = useMemo(
-    () => filterDashboardCards(cards, { query, selectedRoleIds: selectedRoles, activeTag: "", sort }),
-    [cards, query, selectedRoles, sort]
+    () => filterDashboardCards(visibleCards, { query, selectedRoleIds: selectedRoles, activeTag: "", sort }),
+    [visibleCards, query, selectedRoles, sort]
   );
 
-  const selectedCard = cards.find((card) => card.id === expandedCard?.cardId) ?? null;
+  const selectedCard = visibleCards.find((card) => card.id === expandedCard?.cardId) ?? null;
   const selectedRoleLabels = selectedRoles.includes("all")
     ? ["all"]
     : filters.roles.filter((role) => selectedRoles.includes(role.id)).map((role) => role.label);
@@ -55,10 +56,15 @@ export function DashboardWorkspace({ cards }: { cards: DashboardCard[] }) {
     setSelectedRoles([roleId]);
   }
 
+  function removeCardFromView(cardId: string) {
+    setExpandedCard(null);
+    setVisibleCards((currentCards) => currentCards.filter((card) => card.id !== cardId));
+  }
+
   return (
     <div className="min-h-screen bg-[#101412] text-[#f4f1e8]">
       <div className="flex min-h-screen">
-        <DashboardSidebar cards={cards.slice(0, 4)} cardCount={cards.length} query={query} onQueryChange={setQuery} onOpenCard={openCard} />
+        <DashboardSidebar cards={visibleCards.slice(0, 4)} cardCount={visibleCards.length} query={query} onQueryChange={setQuery} onOpenCard={openCard} />
 
         <main className="starfield-surface min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
           <header className="flex items-center justify-between gap-4">
@@ -106,6 +112,7 @@ export function DashboardWorkspace({ cards }: { cards: DashboardCard[] }) {
           originRect={expandedCard.rect}
           selectedRoleLabels={selectedRoleLabels}
           onClose={() => setExpandedCard(null)}
+          onDelete={removeCardFromView}
         />
       ) : null}
     </div>

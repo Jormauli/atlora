@@ -21,6 +21,12 @@ test("card detail modal deletes only after an inline confirmation", () => {
   assert.ok(modalSource.includes("method: \"DELETE\""));
 });
 
+test("card detail modal removes a deleted card without waiting for a route refresh", () => {
+  assert.ok(modalSource.includes("onDelete"));
+  assert.ok(modalSource.includes("onDelete(card.id)"));
+  assert.ok(!modalSource.includes("router.refresh()"));
+});
+
 test("card detail modal language toggle changes interface labels instead of card content", () => {
   assert.ok(modalSource.includes("interfaceCopy"));
   assert.ok(modalSource.includes("Summary"));

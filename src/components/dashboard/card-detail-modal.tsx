@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { ArrowUpRight, Trash2, X } from "lucide-react";
@@ -25,14 +24,15 @@ export function CardDetailModal({
   card,
   originRect,
   selectedRoleLabels,
-  onClose
+  onClose,
+  onDelete
 }: {
   card: DashboardCard;
   originRect: CardOriginRect;
   selectedRoleLabels: string[];
   onClose: () => void;
+  onDelete: (cardId: string) => void;
 }) {
-  const router = useRouter();
   const [entered, setEntered] = useState(false);
   const [language, setLanguage] = useState<"zh" | "en">("zh");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -57,8 +57,7 @@ export function CardDetailModal({
       setDeleteError(copy.deleteFailed);
       return;
     }
-    onClose();
-    router.refresh();
+    onDelete(card.id);
   }
 
   useEffect(() => {
