@@ -3,44 +3,44 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AuthFrame } from "@/components/auth-frame";
+import { useLanguage } from "@/components/language-provider";
 import { Button, Input } from "@/components/ui";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { copy } = useLanguage();
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   async function submit(formData: FormData) {
     setError("");
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(formData))
-    });
-    if (!response.ok) {
-      setError("邮箱或密码错误");
-      return;
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(formData))
+      });
+      if (!response.ok) {
+        setError(copy.auth.loginFailed);
+        return;
+      }
+      router.push("/dashboard");
+    } finally {
+      setIsSubmitting(false);
     }
-    router.push("/dashboard");
   }
   return (
-    <AuthFrame title="欢迎回来">
+    <AuthFrame title={copy.auth.loginTitle} eyebrow={copy.auth.loginEyebrow}>
       <form action={submit} className="space-y-4">
-        <Input name="email" type="email" placeholder="邮箱" required />
-        <Input name="password" type="password" placeholder="密码" required />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button className="w-full">登录</Button>
+        <Input className="border-[#354039] bg-[#0d120f] text-[#eef1e8] placeholder:text-[#788279] focus:ring-[#a9bf95]" name="email" type="email" placeholder={copy.auth.email} required />
+        <Input className="border-[#354039] bg-[#0d120f] text-[#eef1e8] placeholder:text-[#788279] focus:ring-[#a9bf95]" name="password" type="password" placeholder={copy.auth.password} required />
+        <div className="min-h-5">{error && <p className="text-sm text-[#e7a09a]">{error}</p>}</div>
+        <Button disabled={isSubmitting} className="w-full bg-[#d9e7c6] text-[#172018] hover:bg-[#e6efd8]">
+          {isSubmitting ? copy.auth.loggingIn : copy.auth.login}
+        </Button>
       </form>
-      <p className="mt-4 text-sm text-muted">还没有账号？<Link className="text-blue-600" href="/register">注册</Link></p>
+      <p className="mt-5 text-center text-sm text-[#929c94]">{copy.auth.noAccount} <Link className="text-[#c5d8b1] hover:text-[#e6efd8]" href="/register">{copy.auth.register}</Link></p>
     </AuthFrame>
-  );
-}
-
-function AuthFrame({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <section className="w-full max-w-md rounded-lg border bg-white p-6 shadow-soft">
-        <h1 className="mb-6 text-2xl font-semibold">{title}</h1>
-        {children}
-      </section>
-    </main>
   );
 }

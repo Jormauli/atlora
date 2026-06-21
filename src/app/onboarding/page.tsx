@@ -3,12 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { LanguageToggle, useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui";
 import { contentViews } from "@/lib/content-views";
 import { brand } from "@/lib/brand";
+import { localizedContentViewLabel } from "@/lib/language";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { copy } = useLanguage();
   const [primaryUseCases, setPrimaryUseCases] = useState<string[]>([contentViews[0].id]);
 
   async function save() {
@@ -23,10 +26,13 @@ export default function OnboardingPage() {
   return (
     <main className="starfield-surface flex min-h-screen items-center justify-center bg-[#101412] px-4 py-10 text-[#f4f1e8]">
       <section className="w-full max-w-3xl rounded-lg border border-[#344039] bg-[#171d1a] p-6 shadow-2xl">
-        <div className="text-xs uppercase tracking-[0.18em] text-[#9ba79d]">{brand.name.en}</div>
-        <h1 className="mt-2 text-2xl font-semibold">选择你的初始观测视角</h1>
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[#9ba79d]">{brand.name.en}</div>
+          <LanguageToggle />
+        </div>
+        <h1 className="mt-2 text-2xl font-semibold">{copy.onboarding.title}</h1>
         <p className="mt-2 text-sm leading-6 text-[#b9b1a3]">
-          先选你常看的内容类型。之后每次生成卡片时，系统会在这些视角里判断最适合的 1-2 个视角。
+          {copy.onboarding.description}
         </p>
 
         <div className="mt-6 grid gap-3 md:grid-cols-2">
@@ -43,14 +49,14 @@ export default function OnboardingPage() {
                     : "border-[#354039] bg-[#101412] text-[#d8d2c6] hover:bg-[#202821]"
                 }`}
               >
-                <span>{view.label}</span>
+                <span>{localizedContentViewLabel(view.id, copy)}</span>
                 {active ? <Check className="h-4 w-4" /> : null}
               </button>
             );
           })}
         </div>
 
-        <Button className="mt-6" onClick={save}>进入星域</Button>
+        <Button className="mt-6" onClick={save}>{copy.onboarding.enter}</Button>
       </section>
     </main>
   );

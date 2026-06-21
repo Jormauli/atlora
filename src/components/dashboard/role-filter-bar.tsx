@@ -1,5 +1,9 @@
+"use client";
+
 import { Check } from "lucide-react";
+import { useLanguage } from "@/components/language-provider";
 import type { RoleFilter } from "@/lib/dashboard/card-view-model";
+import { localizedContentViewLabel } from "@/lib/language";
 
 export function RoleFilterBar({
   roles,
@@ -10,23 +14,27 @@ export function RoleFilterBar({
   selectedRoles: string[];
   onToggle: (roleId: string) => void;
 }) {
+  const { copy } = useLanguage();
   return (
     <section className="mt-6 border-b border-[#29302d] pb-5">
-      <div className="mb-3 text-sm font-medium text-[#c9c2b6]">观测视角</div>
+      <div className="mb-3 text-sm font-medium text-[#c9c2b6]">{copy.newMaterial.viewLabel}</div>
       <div className="scrollbar-none flex gap-4 overflow-x-auto pb-1">
-        {roles.map((role) => (
-          <button
-            key={role.id}
-            type="button"
-            onClick={() => onToggle(role.id)}
-            className="group flex min-w-[74px] flex-col items-center gap-2 rounded-md p-1 text-xs text-[#c9c2b6] hover:bg-white/[0.05]"
-          >
-            <span className={roleCircleClass(role.tone, selectedRoles.includes(role.id))}>
-              {selectedRoles.includes(role.id) ? <Check className="h-5 w-5" /> : role.label.slice(0, 1)}
-            </span>
-            <span className="max-w-[86px] truncate">{role.label}</span>
-          </button>
-        ))}
+        {roles.map((role) => {
+          const label = localizedContentViewLabel(role.label, copy);
+          return (
+            <button
+              key={role.id}
+              type="button"
+              onClick={() => onToggle(role.id)}
+              className="group flex min-w-[74px] flex-col items-center gap-2 rounded-md p-1 text-xs text-[#c9c2b6] hover:bg-white/[0.05]"
+            >
+              <span className={roleCircleClass(role.tone, selectedRoles.includes(role.id))}>
+                {selectedRoles.includes(role.id) ? <Check className="h-5 w-5" /> : label.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="max-w-[86px] truncate">{label}</span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

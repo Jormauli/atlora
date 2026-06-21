@@ -35,6 +35,61 @@ a {
     linear-gradient(180deg, #101412 0%, #121816 48%, #101412 100%);
 }
 
+.spectral-surface {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(79, 111, 143, 0.18) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 82% 12%, rgba(180, 135, 69, 0.15) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 66% 42%, rgba(154, 85, 75, 0.12) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 28% 78%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, #111111 0%, #151515 48%, #111111 100%);
+}
+
+.orbit-motion {
+  transform-origin: center;
+  will-change: transform;
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes flow-signal-travel {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(42px);
+  }
+}
+
+.flow-signal {
+  animation: flow-signal-travel 2.8s ease-in-out infinite alternate;
+}
+
+@media (min-width: 1024px) {
+  .orbit-motion--inner {
+    animation: orbit-spin 26s linear infinite;
+    animation-delay: -7s;
+  }
+
+  .orbit-motion--middle {
+    animation: orbit-spin 38s linear infinite reverse;
+    animation-delay: -18s;
+  }
+
+  .orbit-motion--outer {
+    animation: orbit-spin 52s linear infinite;
+    animation-delay: -35s;
+  }
+}
+
 .reader-backdrop-enter {
   animation: reader-backdrop-in 180ms ease-out;
 }
@@ -73,7 +128,9 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .reader-backdrop-enter,
   .reader-panel-transition,
-  .reader-panel-content {
+  .reader-panel-content,
+  .orbit-motion,
+  .flow-signal {
     animation: none;
     transition: none;
   }

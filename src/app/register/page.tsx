@@ -3,38 +3,47 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AuthFrame } from "@/components/auth-frame";
+import { useLanguage } from "@/components/language-provider";
 import { Button, Input } from "@/components/ui";
 import { readJsonSafely } from "@/lib/client/http";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { copy } = useLanguage();
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   async function submit(formData: FormData) {
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(formData))
-    });
-    if (!response.ok) {
-      const body = await readJsonSafely(response);
-      setError(body?.error ?? "注册失败，请确认数据库已启动。");
-      return;
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(formData))
+      });
+      if (!response.ok) {
+        const body = await readJsonSafely(response);
+        setError(body?.error ?? copy.auth.registerFailed);
+        return;
+      }
+      router.push("/onboarding");
+    } finally {
+      setIsSubmitting(false);
     }
-    router.push("/onboarding");
   }
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <section className="w-full max-w-md rounded-lg border bg-white p-6 shadow-soft">
-        <h1 className="mb-6 text-2xl font-semibold">创建账号</h1>
-        <form action={submit} className="space-y-4">
-          <Input name="nickname" placeholder="昵称，可选" />
-          <Input name="email" type="email" placeholder="邮箱" required />
-          <Input name="password" type="password" placeholder="至少 8 位密码" required />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button className="w-full">注册</Button>
-        </form>
-        <p className="mt-4 text-sm text-muted">已有账号？<Link className="text-blue-600" href="/login">登录</Link></p>
-      </section>
-    </main>
+    <AuthFrame title={copy.auth.registerTitle} eyebrow={copy.auth.registerEyebrow}>
+      <form action={submit} className="space-y-4">
+        <Input className="border-[#354039] bg-[#0d120f] text-[#eef1e8] placeholder:text-[#788279] focus:ring-[#a9bf95]" name="nickname" placeholder={copy.auth.nickname} />
+        <Input className="border-[#354039] bg-[#0d120f] text-[#eef1e8] placeholder:text-[#788279] focus:ring-[#a9bf95]" name="email" type="email" placeholder={copy.auth.email} required />
+        <Input className="border-[#354039] bg-[#0d120f] text-[#eef1e8] placeholder:text-[#788279] focus:ring-[#a9bf95]" name="password" type="password" placeholder={copy.auth.passwordHint} required />
+        <div className="min-h-5">{error && <p className="text-sm text-[#e7a09a]">{error}</p>}</div>
+        <Button disabled={isSubmitting} className="w-full bg-[#d9e7c6] text-[#172018] hover:bg-[#e6efd8]">
+          {isSubmitting ? copy.auth.registering : copy.auth.register}
+        </Button>
+      </form>
+      <p className="mt-5 text-center text-sm text-[#929c94]">{copy.auth.hasAccount} <Link className="text-[#c5d8b1] hover:text-[#e6efd8]" href="/login">{copy.auth.login}</Link></p>
+    </AuthFrame>
   );
 }

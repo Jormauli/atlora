@@ -16,7 +16,7 @@ test("card detail modal contains wheel scrolling inside the card panel", () => {
 
 test("card detail modal deletes only after an inline confirmation", () => {
   assert.ok(modalSource.includes("confirmingDelete"));
-  assert.ok(modalSource.includes("确认删除"));
+  assert.ok(modalSource.includes("cardCopy.confirmDelete"));
   assert.ok(modalSource.includes("fetch(`/api/cards/${card.id}`"));
   assert.ok(modalSource.includes("method: \"DELETE\""));
 });
@@ -27,9 +27,9 @@ test("card detail modal removes a deleted card without waiting for a route refre
   assert.ok(!modalSource.includes("router.refresh()"));
 });
 
-test("card detail modal language toggle changes interface labels instead of card content", () => {
-  assert.ok(modalSource.includes("interfaceCopy"));
-  assert.ok(modalSource.includes("Summary"));
-  assert.ok(modalSource.includes("Key Points"));
+test("card detail modal uses the global language state for interface labels only", () => {
+  assert.ok(modalSource.includes("useLanguage"));
+  assert.ok(modalSource.includes("copy.card"));
+  assert.ok(!modalSource.includes("useState<\"zh\" | \"en\">"));
   assert.ok(!modalSource.includes("getLocalizedCardContent"));
 });
