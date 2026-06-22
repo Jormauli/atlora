@@ -33,7 +33,7 @@ test("OpenAICompatibleProvider passes output limits and an abort signal", async 
       route
     );
 
-    assert.equal(requestBody?.max_tokens, route.maxOutputTokens);
+    assert.equal((requestBody as Record<string, unknown> | null)?.max_tokens, route.maxOutputTokens);
     assert.ok(requestSignal instanceof AbortSignal);
   } finally {
     globalThis.fetch = originalFetch;

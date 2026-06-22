@@ -1,0 +1,13 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=docker/wechat-extractor/Dockerfile
+      - --tag=${_IMAGE}
+      - .
+images:
+  - ${_IMAGE}
+options:
+  logging: CLOUD_LOGGING_ONLY
+substitutions:
+  _IMAGE: asia-east1-docker.pkg.dev/atlora-500217/atlora/wechat-worker:preview

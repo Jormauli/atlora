@@ -3,6 +3,8 @@ import { completeWorkerExtraction } from "@/lib/services/ingestion/async-service
 import { authenticateWorkerCallback } from "@/lib/services/worker/auth";
 import { workerExtractedSchema } from "@/lib/services/worker/contracts";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const authenticated = await authenticateWorkerCallback(request, params.id);
   if (!authenticated.ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
