@@ -7,8 +7,20 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
   const ingestion = await prisma.ingestionItem.findFirst({
     where: { id: params.id, userId: user.id },
-    include: { processingResult: true }
+    include: { card: { select: { id: true } } }
   });
   if (!ingestion) return NextResponse.json({ error: "未找到" }, { status: 404 });
-  return NextResponse.json({ ingestion });
+  return NextResponse.json({
+    ingestion: {
+      id: ingestion.id,
+      status: ingestion.status,
+      stage: ingestion.stage,
+      failureCode: ingestion.failureCode,
+      errorMessage: ingestion.errorMessage,
+      createdAt: ingestion.createdAt,
+      processingStartedAt: ingestion.processingStartedAt,
+      processingCompletedAt: ingestion.processingCompletedAt,
+      cardId: ingestion.card?.id ?? null
+    }
+  });
 }
