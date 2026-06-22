@@ -291,8 +291,8 @@ test("robots points to production sitemap and blocks private routes", () => {
   const value = robots();
   assert.equal(value.sitemap, "https://www.atlora.io/sitemap.xml");
   assert.ok(value.rules && !Array.isArray(value.rules));
-  assert.ok(value.rules.disallow?.includes("/dashboard"));
   assert.ok(value.rules.disallow?.includes("/api/"));
+  assert.equal(value.rules.disallow?.includes("/dashboard"), false);
 });
 
 test("social preview uses the standard Open Graph dimensions", () => {
@@ -311,7 +311,7 @@ Expected: FAIL because the metadata routes do not exist.
 
 - [ ] **Step 3: Implement metadata routes and social image**
 
-Return two sitemap entries with weekly change frequency and priority `1`. Return one robots rule allowing `/zh` and `/en` while disallowing `/api/`, `/cards/`, `/dashboard`, `/login`, `/new`, `/onboarding`, `/register`, `/settings`, and `/usage`.
+Return two sitemap entries with weekly change frequency and priority `1`. Return one robots rule allowing the site while disallowing `/api/` only. Do not disallow private HTML routes: crawlers need to access those responses to observe their `X-Robots-Tag: noindex, nofollow` directive.
 
 Create an `ImageResponse` social image with:
 

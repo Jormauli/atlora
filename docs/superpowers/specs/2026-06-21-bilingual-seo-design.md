@@ -98,7 +98,7 @@ Private and utility routes receive `noindex, nofollow`, including:
 - `/cards/*`
 - `/api/*`
 
-`robots.txt` points to the sitemap and disallows private route families. Response-level `X-Robots-Tag` protection is used for non-public routes so private pages remain excluded even when directly linked.
+`robots.txt` points to the sitemap and disallows API routes. It does not block private HTML routes because crawlers must be able to read their response-level `X-Robots-Tag: noindex, nofollow` directive. This response-level protection keeps private pages excluded even when directly linked.
 
 ## Error Handling
 
