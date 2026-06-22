@@ -24,6 +24,7 @@ export async function createDraftCard(input: {
     source_domain?: string | null;
   };
   sourceType: "text" | "image" | "link";
+  ingestionItemId?: string | null;
   sourceUrl?: string | null;
   templateId: string;
 }) {
@@ -33,6 +34,7 @@ export async function createDraftCard(input: {
   const card = await prisma.card.create({
     data: {
       userId: input.userId,
+      ingestionItemId: input.ingestionItemId,
       title: input.generated.title,
       summary: input.generated.summary,
       keyPoints: input.generated.key_points,
