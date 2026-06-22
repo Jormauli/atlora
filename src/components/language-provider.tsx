@@ -33,6 +33,7 @@ export function LanguageProvider({ children, initialLanguage }: LanguageProvider
 
   const setLanguage = useCallback((nextLanguage: UiLanguage) => {
     setLanguageState(nextLanguage);
+    document.documentElement.lang = nextLanguage === "en" ? "en" : "zh-CN";
     window.localStorage.setItem(storageKey, nextLanguage);
     document.cookie = `${storageKey}=${nextLanguage}; Path=/; Max-Age=31536000; SameSite=Lax`;
   }, []);

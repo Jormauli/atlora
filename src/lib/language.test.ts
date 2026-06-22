@@ -33,3 +33,9 @@ test("app shells expose the shared global language switcher", () => {
   assert.ok(serverShell.includes("AppShellClient"));
   assert.ok(clientShell.includes("LanguageToggle"));
 });
+
+test("global language changes also update the document language", () => {
+  const provider = readFileSync(path.join(root, "src/components/language-provider.tsx"), "utf8");
+
+  assert.ok(provider.includes('document.documentElement.lang = nextLanguage === "en" ? "en" : "zh-CN"'));
+});
