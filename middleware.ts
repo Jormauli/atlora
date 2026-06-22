@@ -1,16 +1,33 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { isIndexablePath, localeFromPath, type SeoLocale } from "@/lib/seo";
 
 const protectedRoutes = ["/dashboard", "/new", "/cards", "/settings", "/usage", "/onboarding"];
 const cookieName = "ai_material_box_session";
 
 export async function middleware(request: NextRequest) {
-  const isProtected = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route));
+  const pathname = request.nextUrl.pathname;
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
   if (isProtected && !(await hasVerifiedSession(request))) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return applyIndexPolicy(NextResponse.redirect(new URL("/login", request.url)), pathname);
   }
-  return NextResponse.next();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-atlora-locale", getRequestLocale(request));
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  return applyIndexPolicy(response, pathname);
+}
+
+function getRequestLocale(request: NextRequest): SeoLocale {
+  const routeLocale = localeFromPath(request.nextUrl.pathname);
+  if (routeLocale) return routeLocale;
+  return request.cookies.get("atlora-ui-language")?.value === "en" ? "en" : "zh";
+}
+
+function applyIndexPolicy(response: NextResponse, pathname: string) {
+  if (!isIndexablePath(pathname)) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
 }
 
 async function hasVerifiedSession(request: NextRequest) {
@@ -26,5 +43,5 @@ async function hasVerifiedSession(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/new/:path*", "/cards/:path*", "/settings/:path*", "/usage/:path*", "/onboarding/:path*"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
 };

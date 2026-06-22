@@ -110,6 +110,15 @@ test("language provider accepts an initial language and exposes crawlable locale
   assert.ok(languageProvider.includes("export function LanguageToggle"));
 });
 
+test("root layout renders the request language and production metadata base", () => {
+  const rootLayout = readFileSync(path.join(root, "src/app/layout.tsx"), "utf8");
+
+  assert.ok(rootLayout.includes('headers().get("x-atlora-locale")'));
+  assert.ok(rootLayout.includes('lang={initialLanguage === "en" ? "en" : "zh-CN"}'));
+  assert.ok(rootLayout.includes("metadataBase: new URL(siteUrl)"));
+  assert.ok(rootLayout.includes("<LanguageProvider initialLanguage={initialLanguage}>"));
+});
+
 test("authentication pages share the dark Atlora frame", () => {
   for (const file of ["src/app/login/page.tsx", "src/app/register/page.tsx"]) {
     const source = readFileSync(path.join(root, file), "utf8");

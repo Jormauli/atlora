@@ -15,6 +15,7 @@ test("middleware redirects an invalid session token", async () => {
   const response = await middleware(request);
 
   assert.equal(response.headers.get("location"), "http://localhost/login");
+  assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
 });
 
 test("middleware allows a verified session token", async () => {
@@ -32,4 +33,29 @@ test("middleware allows a verified session token", async () => {
 
   assert.equal(response.headers.get("location"), null);
   assert.equal(response.headers.get("x-middleware-next"), "1");
+  assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
+});
+
+test("middleware forwards a public locale without blocking indexing", async () => {
+  const response = await middleware(new NextRequest("http://localhost/en"));
+
+  assert.equal(response.headers.get("x-robots-tag"), null);
+  assert.equal(response.headers.get("x-middleware-request-x-atlora-locale"), "en");
+});
+
+test("middleware marks utility routes as noindex", async () => {
+  const response = await middleware(new NextRequest("http://localhost/login"));
+
+  assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
+  assert.equal(response.headers.get("x-middleware-request-x-atlora-locale"), "zh");
+});
+
+test("middleware forwards a stored application language", async () => {
+  const request = new NextRequest("http://localhost/login", {
+    headers: { cookie: "atlora-ui-language=en" }
+  });
+
+  const response = await middleware(request);
+
+  assert.equal(response.headers.get("x-middleware-request-x-atlora-locale"), "en");
 });
