@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildGoogleTaskName, createGoogleTaskQueue } from "./google";
+import { buildGoogleTaskName, cloudTasksClientOptions, createGoogleTaskQueue } from "./google";
 
 test("Google task names are deterministic per ingestion", () => {
   assert.equal(
@@ -40,3 +40,16 @@ test("Google queue sends one OIDC-authenticated worker task", async () => {
   });
 });
 
+test("Vercel credentials are decoded without writing a key file", () => {
+  const encoded = Buffer.from(JSON.stringify({
+    client_email: "queue@example.iam.gserviceaccount.com",
+    private_key: "private-key"
+  })).toString("base64");
+  assert.deepEqual(cloudTasksClientOptions(encoded), {
+    credentials: {
+      client_email: "queue@example.iam.gserviceaccount.com",
+      private_key: "private-key"
+    }
+  });
+  assert.deepEqual(cloudTasksClientOptions(undefined), {});
+});

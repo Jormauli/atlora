@@ -48,8 +48,20 @@ export function googleTaskQueueFromEnvironment(): TaskQueue {
     parent: `projects/${project}/locations/${location}/queues/${queue}`,
     workerUrl: requireEnv("WECHAT_WORKER_URL"),
     serviceAccountEmail: requireEnv("GCP_TASKS_SERVICE_ACCOUNT_EMAIL"),
-    client: new CloudTasksClient() as unknown as TaskClient
+    client: new CloudTasksClient(cloudTasksClientOptions(process.env.GCP_SERVICE_ACCOUNT_JSON_BASE64)) as unknown as TaskClient
   });
+}
+
+export function cloudTasksClientOptions(encodedCredentials: string | undefined) {
+  if (!encodedCredentials?.trim()) return {};
+  const parsed = JSON.parse(Buffer.from(encodedCredentials, "base64").toString("utf8")) as {
+    client_email?: string;
+    private_key?: string;
+  };
+  if (!parsed.client_email || !parsed.private_key) {
+    throw new Error("GCP_SERVICE_ACCOUNT_JSON_BASE64 is invalid");
+  }
+  return { credentials: { client_email: parsed.client_email, private_key: parsed.private_key } };
 }
 
 function requireEnv(name: string) {
@@ -57,4 +69,3 @@ function requireEnv(name: string) {
   if (!value) throw new Error(`${name} is required`);
   return value;
 }
-
