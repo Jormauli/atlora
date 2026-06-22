@@ -105,6 +105,12 @@ test("localizes Open Graph and Twitter metadata", () => {
     type: "website",
     locale: "zh_CN",
     alternateLocale: "en_US",
+    images: [{
+      url: `${siteUrl}/opengraph-image`,
+      width: 1200,
+      height: 630,
+      alt: "Atlora Knowledge Starfield",
+    }],
   });
   assert.deepEqual(en.openGraph, {
     title: en.title,
@@ -114,16 +120,24 @@ test("localizes Open Graph and Twitter metadata", () => {
     type: "website",
     locale: "en_US",
     alternateLocale: "zh_CN",
+    images: [{
+      url: `${siteUrl}/opengraph-image`,
+      width: 1200,
+      height: 630,
+      alt: "Atlora Knowledge Starfield",
+    }],
   });
   assert.deepEqual(zh.twitter, {
     card: "summary_large_image",
     title: zh.title,
     description: zh.description,
+    images: [`${siteUrl}/opengraph-image`],
   });
   assert.deepEqual(en.twitter, {
     card: "summary_large_image",
     title: en.title,
     description: en.description,
+    images: [`${siteUrl}/opengraph-image`],
   });
 });
 

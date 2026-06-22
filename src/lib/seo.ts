@@ -105,11 +105,18 @@ export function buildLocaleMetadata(locale: SeoLocale): Metadata {
       type: "website",
       locale: content.openGraphLocale,
       alternateLocale: content.alternateOpenGraphLocale,
+      images: [{
+        url: `${siteUrl}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: "Atlora Knowledge Starfield",
+      }],
     },
     twitter: {
       card: "summary_large_image",
       title: content.title,
       description: content.description,
+      images: [`${siteUrl}/opengraph-image`],
     },
   };
 }

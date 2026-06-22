@@ -1,10 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { SignJWT } from "jose";
 import { NextRequest } from "next/server";
-import { middleware } from "./middleware";
+import { middleware } from "./src/middleware";
 
 const secret = "middleware-test-secret";
+
+test("middleware lives beside the src app so Next.js includes it in production", () => {
+  assert.equal(existsSync("src/middleware.ts"), true);
+  assert.equal(existsSync("middleware.ts"), false);
+});
 
 test("middleware redirects an invalid session token", async () => {
   process.env.NEXTAUTH_SECRET = secret;

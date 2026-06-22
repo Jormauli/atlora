@@ -57,6 +57,7 @@ test("public home uses the localized route copy and localized home link", () => 
   assert.ok(publicHome.includes('href="/register"'));
   assert.ok(publicHome.includes('href="/login"'));
   assert.ok(publicHome.includes("setLanguage(locale)"));
+  assert.ok(publicHome.includes('document.documentElement.lang = locale === "en" ? "en" : "zh-CN"'));
   assert.ok(!publicHome.includes("useRef"));
 });
 

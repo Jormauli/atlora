@@ -18,6 +18,7 @@ export function PublicHome({ locale }: { locale: SeoLocale }) {
   const { setLanguage } = useLanguage();
 
   useEffect(() => {
+    document.documentElement.lang = locale === "en" ? "en" : "zh-CN";
     setLanguage(locale);
   }, [locale, setLanguage]);
 
