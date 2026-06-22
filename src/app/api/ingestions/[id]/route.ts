@@ -20,6 +20,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
       createdAt: ingestion.createdAt,
       processingStartedAt: ingestion.processingStartedAt,
       processingCompletedAt: ingestion.processingCompletedAt,
+      rawUrl: ingestion.rawUrl,
       cardId: ingestion.card?.id ?? null
     }
   });
