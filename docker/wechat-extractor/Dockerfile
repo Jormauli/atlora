@@ -58,7 +58,10 @@ RUN git clone "$WECHAT_TOOL_REPOSITORY" "$WECHAT_ARTICLE_TOOL_DIR" \
     && rm -rf "$WECHAT_ARTICLE_TOOL_DIR/.git" /root/.cache/pip
 
 COPY docker/wechat-extractor/smoke_test.py /opt/atlora/smoke_test.py
+COPY worker /opt/atlora/worker
 
-WORKDIR /opt/wechat-article-for-ai
+WORKDIR /opt/atlora/worker
 
-CMD ["python", "/opt/atlora/smoke_test.py"]
+ENV PORT=8080 PYTHONPATH=/opt/atlora/worker
+
+CMD ["sh", "-c", "exec gunicorn --bind :${PORT} --workers 1 --threads 1 --timeout 300 atlora_worker.app:app"]

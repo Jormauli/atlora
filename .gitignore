@@ -4,6 +4,7 @@ node_modules
 .DS_Store
 .superpowers/
 .worktrees/
+.venv-worker/
 tsconfig.tsbuildinfo
 v2/
 config/
