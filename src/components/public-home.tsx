@@ -1,23 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { ArrowRight, Link2, LogIn, ScanText, Telescope } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
-import { LanguageToggle, useLanguage } from "@/components/language-provider";
+import { LocaleLanguageToggle, useLanguage } from "@/components/language-provider";
 import { PublicHomeFlowVisual, type PublicHomeFlowVariant } from "@/components/public-home-flow-visual";
+import { uiCopy } from "@/lib/language";
+import type { SeoLocale } from "@/lib/seo";
 
 const capabilityIcons = [Link2, ScanText, Telescope] as const;
 const capabilitySignals = ["bg-[#4f6f8f]", "bg-[#b48745]", "bg-[#9a554b]"] as const;
 const flowVariants: PublicHomeFlowVariant[] = ["input", "extract", "card"];
 const flowSignals = ["bg-[#4f6f8f]", "bg-[#b48745]", "bg-[#9a554b]"] as const;
 
-export function PublicHome() {
-  const { copy } = useLanguage();
+export function PublicHome({ locale }: { locale: SeoLocale }) {
+  const { setLanguage } = useLanguage();
+
+  useEffect(() => {
+    setLanguage(locale);
+  }, [locale, setLanguage]);
+
+  const copy = uiCopy[locale];
 
   return (
     <main className="spectral-surface min-h-screen overflow-hidden bg-[#111111] text-[#f1f1ef]">
       <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between border-b border-[#303030] px-5 sm:px-8">
-        <Link href="/" className="flex items-center gap-3" aria-label="Atlora">
+        <Link href={`/${locale}`} className="flex items-center gap-3" aria-label="Atlora">
           <BrandMark className="h-8 w-8 shrink-0" />
           <span>
             <strong className="block text-sm font-semibold text-[#f3f3f1]">Atlora</strong>
@@ -26,7 +35,7 @@ export function PublicHome() {
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
           <Link href="/login" className="hidden text-sm text-[#b4b4b1] hover:text-white sm:inline">{copy.publicHome.login}</Link>
-          <LanguageToggle />
+          <LocaleLanguageToggle locale={locale} />
         </div>
       </header>
 
