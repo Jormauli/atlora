@@ -19,14 +19,18 @@ def send_callback(ingestion_id, action, payload):
     pathname = f"/api/internal/ingestions/{ingestion_id}/{action}"
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     timestamp = int(time.time())
+    headers = {
+        "content-type": "application/json",
+        "x-atlora-timestamp": str(timestamp),
+        "x-atlora-signature": build_signature(secret, "POST", pathname, timestamp, ingestion_id, body),
+    }
+    vercel_bypass_secret = os.environ.get("VERCEL_AUTOMATION_BYPASS_SECRET")
+    if vercel_bypass_secret:
+        headers["x-vercel-protection-bypass"] = vercel_bypass_secret
     response = requests.post(
         f"{base_url}{pathname}",
         data=body.encode("utf-8"),
-        headers={
-            "content-type": "application/json",
-            "x-atlora-timestamp": str(timestamp),
-            "x-atlora-signature": build_signature(secret, "POST", pathname, timestamp, ingestion_id, body),
-        },
+        headers=headers,
         timeout=30,
     )
     response.raise_for_status()
