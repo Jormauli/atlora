@@ -12,6 +12,7 @@ LOGGER = logging.getLogger(__name__)
 def create_app():
     app = Flask(__name__)
 
+    @app.get("/health")
     @app.get("/healthz")
     def health():
         return jsonify({"ok": True})

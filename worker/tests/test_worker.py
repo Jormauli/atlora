@@ -43,6 +43,12 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         process_task.assert_called_once()
 
+    def test_health_endpoint_uses_non_reserved_path(self):
+        app = create_app()
+        response = app.test_client().get("/health")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"ok": True})
+
     @patch("atlora_worker.app.process_task")
     def test_rejects_non_wechat_urls(self, process_task):
         app = create_app()
