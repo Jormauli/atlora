@@ -43,6 +43,10 @@ export async function POST(request: Request) {
   const html = await tryHtmlExtraction(parsed.data.url);
   if (html) {
     try {
+      await prisma.ingestionItem.update({
+        where: { id: ingestion.id },
+        data: { status: "processing", stage: "generating_card" }
+      });
       const generated = await generateCardDraft({
         userId: user.id,
         content: [html.title, html.text].filter(Boolean).join("\n"),
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
         where: { id: ingestion.id },
         data: { status: "processed", stage: "completed", processingCompletedAt: new Date() }
       });
-      return NextResponse.json({ card });
+      return NextResponse.json({ ingestionId: ingestion.id });
     } catch (error) {
       console.error(error);
       await prisma.ingestionItem.update({

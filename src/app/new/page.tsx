@@ -257,7 +257,7 @@ function LinkIngestionProgress({ stage, stages, elapsedMs, waitedLabel }: {
   elapsedMs: number;
   waitedLabel: string;
 }) {
-  const stageIndex = ({
+  const backendStageIndex = ({
     queued: 0,
     opening_article: 0,
     extracting_text: 1,
@@ -265,6 +265,7 @@ function LinkIngestionProgress({ stage, stages, elapsedMs, waitedLabel }: {
     recognizing_text: 2,
     generating_card: 3
   } as Record<string, number>)[stage] ?? 0;
+  const stageIndex = Math.max(backendStageIndex, findActiveStageIndex(stages, elapsedMs));
   const activeStage = stages[stageIndex];
   return (
     <div className="rounded-md border border-[#354039] bg-[#101412] px-4 py-3 text-sm" aria-live="polite">
