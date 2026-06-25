@@ -10,3 +10,5 @@ config/
 preview/
 uploads/temp/*
 !uploads/temp/.gitkeep
+.vercel
+.env*
