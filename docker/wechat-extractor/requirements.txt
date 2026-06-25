@@ -1,4 +1,9 @@
 beautifulsoup4==4.14.3
 camoufox[geoip]==0.4.11
+Flask==3.1.2
+gunicorn==23.0.0
 httpx==0.28.1
 markdownify==1.2.2
+Pillow==11.3.0
+requests==2.32.5
+tencentcloud-sdk-python-ocr==3.1.115

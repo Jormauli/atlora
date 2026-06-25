@@ -51,6 +51,9 @@ RUN python -m pip install --no-cache-dir --timeout 180 --retries 5 \
 
 FROM python-deps AS runtime
 
+ARG WECHAT_TOOL_REPOSITORY=https://github.com/Panniantong/wechat-article-for-ai.git
+ARG WECHAT_TOOL_COMMIT=c52b2aa2aa6f0f0e3689c978db8f183038d2f00c
+
 RUN python -m camoufox fetch
 
 RUN git clone "$WECHAT_TOOL_REPOSITORY" "$WECHAT_ARTICLE_TOOL_DIR" \
@@ -58,7 +61,10 @@ RUN git clone "$WECHAT_TOOL_REPOSITORY" "$WECHAT_ARTICLE_TOOL_DIR" \
     && rm -rf "$WECHAT_ARTICLE_TOOL_DIR/.git" /root/.cache/pip
 
 COPY docker/wechat-extractor/smoke_test.py /opt/atlora/smoke_test.py
+COPY worker /opt/atlora/worker
 
-WORKDIR /opt/wechat-article-for-ai
+WORKDIR /opt/atlora/worker
 
-CMD ["python", "/opt/atlora/smoke_test.py"]
+ENV PORT=8080 PYTHONPATH=/opt/atlora/worker
+
+CMD ["sh", "-c", "exec gunicorn --bind :${PORT} --workers 1 --threads 1 --timeout 300 --access-logfile - atlora_worker.app:app"]

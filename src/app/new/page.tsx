@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ImageIcon, LinkIcon } from "lucide-react";
+import { FileText, ImageIcon, LinkIcon, LoaderCircle } from "lucide-react";
 import { AppShellClient } from "@/components/app-shell-client";
 import { useLanguage } from "@/components/language-provider";
 import { Button, Input, Select, Textarea } from "@/components/ui";
@@ -27,6 +27,9 @@ function NewMaterialContent() {
   const [loading, setLoading] = useState(false);
   const [loadingLabel, setLoadingLabel] = useState("");
   const [loadingElapsedMs, setLoadingElapsedMs] = useState(0);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [ingestionId, setIngestionId] = useState<string | null>(null);
+  const [ingestionStage, setIngestionStage] = useState("queued");
   const templates = [
     ["auto", copy.newMaterial.autoView],
     ...contentViews.map((view) => [`content_view__${view.id}`, localizedContentViewLabel(view.id, copy)])
@@ -45,11 +48,91 @@ function NewMaterialContent() {
     return () => window.clearInterval(timer);
   }, [loading]);
 
+  useEffect(() => {
+    const pendingId = new URLSearchParams(window.location.search).get("ingestion");
+    if (!pendingId) return;
+    setTab("link");
+    setLoading(true);
+    setLoadingLabel(copy.newMaterial.reading);
+    setIngestionId(pendingId);
+  }, [copy.newMaterial.reading]);
+
+  useEffect(() => {
+    if (!ingestionId) return;
+    let cancelled = false;
+    let timer: number | undefined;
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/ingestions/${ingestionId}`, { cache: "no-store" });
+        const body = await readJsonSafely(response);
+        if (!response.ok || !body?.ingestion) throw new Error(body?.error || copy.newMaterial.generateFailed);
+        if (cancelled) return;
+        const ingestion = body.ingestion as {
+          stage: string;
+          rawUrl?: string | null;
+          cardId?: string | null;
+          errorMessage?: string | null;
+        };
+        setIngestionStage(ingestion.stage);
+        if (ingestion.rawUrl) setLinkUrl(ingestion.rawUrl);
+        if (ingestion.stage === "completed" && ingestion.cardId) {
+          clearPendingIngestion();
+          router.push(`/cards/${ingestion.cardId}/draft`);
+          return;
+        }
+        if (ingestion.stage === "failed") {
+          setLoading(false);
+          setLoadingLabel("");
+          setIngestionId(null);
+          clearPendingIngestion();
+          setError(errorAdvice("link", copy, ingestion.errorMessage ?? undefined));
+          return;
+        }
+        timer = window.setTimeout(poll, 1800);
+      } catch (pollError) {
+        if (cancelled) return;
+        setLoading(false);
+        setIngestionId(null);
+        setError(errorAdvice("link", copy, pollError instanceof Error ? pollError.message : undefined));
+      }
+    };
+    void poll();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [copy, ingestionId, router]);
+
   async function submitText(formData: FormData) {
     await submit("/api/ingestions/text", { text: formData.get("text"), templateId }, copy.newMaterial.generating);
   }
   async function submitLink(formData: FormData) {
-    await submit("/api/ingestions/link", { url: formData.get("url"), templateId }, copy.newMaterial.reading);
+    setLoading(true);
+    setLoadingLabel(copy.newMaterial.reading);
+    setError("");
+    await nextPaint();
+    const response = await fetch("/api/ingestions/link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: formData.get("url"), templateId })
+    });
+    const body = await readJsonSafely(response);
+    if (!response.ok) {
+      setLoading(false);
+      setLoadingLabel("");
+      return setError(errorAdvice("link", copy, body?.error));
+    }
+    if (body?.card?.id) return router.push(`/cards/${body.card.id}/draft`);
+    if (!body?.ingestionId) {
+      setLoading(false);
+      return setError(errorAdvice("link", copy));
+    }
+    setIngestionStage("queued");
+    setIngestionId(body.ingestionId);
+    const pendingUrl = new URL(window.location.href);
+    pendingUrl.searchParams.set("ingestion", body.ingestionId);
+    pendingUrl.searchParams.set("tab", "link");
+    window.history.replaceState(null, "", pendingUrl);
   }
   async function submitImage(formData: FormData) {
     setLoading(true);
@@ -121,15 +204,21 @@ function NewMaterialContent() {
         )}
         {tab === "link" && (
           <form action={submitLink} className="mt-5 space-y-4">
-            <Input name="url" type="url" placeholder={copy.newMaterial.urlPlaceholder} required className="border-[#354039] bg-[#101412] text-[#f4f1e8] placeholder:text-[#7f897f] focus:ring-[#d9e7c6]" />
+            <Input name="url" type="url" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder={copy.newMaterial.urlPlaceholder} required className="border-[#354039] bg-[#101412] text-[#f4f1e8] placeholder:text-[#7f897f] focus:ring-[#d9e7c6]" />
             <Button disabled={loading} className="bg-[#d9e7c6] text-[#172018] hover:bg-[#c7dab0]">{loading ? copy.newMaterial.reading : copy.newMaterial.generateLink}</Button>
-            {loading ? <LoadingProgress stages={stageSets.link} elapsedMs={loadingElapsedMs} waitedLabel={copy.newMaterial.stages.waited} /> : null}
+            {loading ? <LinkIngestionProgress stage={ingestionStage} stages={stageSets.link} elapsedMs={loadingElapsedMs} waitedLabel={copy.newMaterial.stages.waited} /> : null}
           </form>
         )}
         {error && <p className="mt-4 rounded-md border border-[#6b3b3b] bg-[#261717] px-3 py-2 text-sm text-[#f0c8c8]">{error}</p>}
       </div>
     </>
   );
+}
+
+function clearPendingIngestion() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("ingestion");
+  window.history.replaceState(null, "", url);
 }
 
 function nextPaint() {
@@ -156,6 +245,35 @@ function LoadingProgress({ stages, elapsedMs, waitedLabel }: { stages: LoadingSt
           className="h-full rounded-full bg-[#d9e7c6] transition-[width] duration-300"
           style={{ width: `${progress}%` }}
         />
+      </div>
+      <p className="mt-2 text-[#b9b1a3]">{activeStage.detail}</p>
+    </div>
+  );
+}
+
+function LinkIngestionProgress({ stage, stages, elapsedMs, waitedLabel }: {
+  stage: string;
+  stages: LoadingStage[];
+  elapsedMs: number;
+  waitedLabel: string;
+}) {
+  const stageIndex = ({
+    queued: 0,
+    opening_article: 0,
+    extracting_text: 1,
+    capturing_screenshot: 2,
+    recognizing_text: 2,
+    generating_card: 3
+  } as Record<string, number>)[stage] ?? 0;
+  const activeStage = stages[stageIndex];
+  return (
+    <div className="rounded-md border border-[#354039] bg-[#101412] px-4 py-3 text-sm" aria-live="polite">
+      <div className="flex items-center justify-between gap-4">
+        <p className="flex items-center gap-2 font-medium text-[#f4f1e8]">
+          <LoaderCircle className="h-4 w-4 animate-spin text-[#d9e7c6]" />
+          {activeStage.label}
+        </p>
+        <p className="text-xs text-[#9ba79d]">{waitedLabel} {Math.max(1, Math.ceil(elapsedMs / 1000))}s</p>
       </div>
       <p className="mt-2 text-[#b9b1a3]">{activeStage.detail}</p>
     </div>

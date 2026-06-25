@@ -17,3 +17,10 @@ test("new material page gives actionable recovery advice when ingestion fails", 
   assert.ok(pageSource.includes("errorAdvice"));
   assert.ok(pageSource.includes("copy.newMaterial.advice[kind]"));
 });
+
+test("link ingestion polls real backend stages and survives refresh", () => {
+  assert.ok(pageSource.includes("/api/ingestions/${ingestionId}"));
+  assert.ok(pageSource.includes("searchParams.set(\"ingestion\""));
+  assert.ok(pageSource.includes("LinkIngestionProgress"));
+  assert.ok(pageSource.includes("generating_card"));
+});
