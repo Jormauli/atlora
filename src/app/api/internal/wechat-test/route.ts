@@ -6,7 +6,7 @@ import { isWeChatArticleUrl } from "@/lib/services/link-fetcher/wechat";
 import { resolveTemplate } from "@/lib/services/ingestion/service";
 import { verifyWorkerRequest } from "@/lib/services/worker/signature";
 
-export const WECHAT_TEST_SIGNATURE_ID = "wechat-test";
+const WECHAT_TEST_SIGNATURE_ID = "wechat-test";
 
 const bodySchema = z.object({
   userId: z.string().min(1),

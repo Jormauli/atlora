@@ -9,4 +9,5 @@ test("internal wechat-test route verifies HMAC and enqueues a worker task", asyn
   assert.match(source, /isWeChatArticleUrl/);
   assert.match(source, /WORKER_CALLBACK_SECRET/);
   assert.match(source, /status:\s*202/);
+  assert.doesNotMatch(source, /export\s+const\s+WECHAT_TEST_SIGNATURE_ID/);
 });
