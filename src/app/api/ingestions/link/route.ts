@@ -42,44 +42,59 @@ export async function POST(request: Request) {
   });
   const html = await tryHtmlExtraction(parsed.data.url);
   if (html) {
-    const generated = await generateCardDraft({
-      userId: user.id,
-      content: [html.title, html.text].filter(Boolean).join("\n"),
-      templateId,
-      sourceType: "link",
-      sourceTitle: html.title,
-      sourceDomain: new URL(parsed.data.url).hostname
-    });
-    await recordUsage({
-      userId: user.id,
-      usageType: "link_fetch",
-      taskType: "basic_summary",
-      quantity: 1,
-      unit: "url",
-      relatedId: ingestion.id
-    });
-    await prisma.processingResult.create({
-      data: {
+    try {
+      const generated = await generateCardDraft({
+        userId: user.id,
+        content: [html.title, html.text].filter(Boolean).join("\n"),
+        templateId,
+        sourceType: "link",
+        sourceTitle: html.title,
+        sourceDomain: new URL(parsed.data.url).hostname
+      });
+      await recordUsage({
+        userId: user.id,
+        usageType: "link_fetch",
+        taskType: "basic_summary",
+        quantity: 1,
+        unit: "url",
+        relatedId: ingestion.id
+      });
+      await prisma.processingResult.create({
+        data: {
+          ingestionItemId: ingestion.id,
+          normalizedText: html.text,
+          extractedTitle: html.title,
+          detectedContentType: "wechat_markdown",
+          sourceMetadata: { strategy: "wechat_html", domain: new URL(parsed.data.url).hostname }
+        }
+      });
+      const card = await createDraftCard({
+        userId: user.id,
         ingestionItemId: ingestion.id,
-        normalizedText: html.text,
-        extractedTitle: html.title,
-        detectedContentType: "wechat_markdown",
-        sourceMetadata: { strategy: "wechat_html", domain: new URL(parsed.data.url).hostname }
-      }
-    });
-    const card = await createDraftCard({
-      userId: user.id,
-      ingestionItemId: ingestion.id,
-      generated,
-      sourceType: "link",
-      sourceUrl: parsed.data.url,
-      templateId
-    });
-    await prisma.ingestionItem.update({
-      where: { id: ingestion.id },
-      data: { status: "processed", stage: "completed", processingCompletedAt: new Date() }
-    });
-    return NextResponse.json({ card });
+        generated,
+        sourceType: "link",
+        sourceUrl: parsed.data.url,
+        templateId
+      });
+      await prisma.ingestionItem.update({
+        where: { id: ingestion.id },
+        data: { status: "processed", stage: "completed", processingCompletedAt: new Date() }
+      });
+      return NextResponse.json({ card });
+    } catch (error) {
+      console.error(error);
+      await prisma.ingestionItem.update({
+        where: { id: ingestion.id },
+        data: {
+          status: "failed",
+          stage: "failed",
+          failureCode: "CARD_GENERATION_FAILED",
+          errorMessage: "正文已识别，但知识卡片生成失败，请稍后重试。",
+          processingCompletedAt: new Date()
+        }
+      });
+      return NextResponse.json({ error: "正文已识别，但知识卡片生成失败，请稍后重试。" }, { status: 500 });
+    }
   }
 
   await prisma.ingestionItem.update({
