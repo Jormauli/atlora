@@ -3,6 +3,7 @@ import { mkdtemp, readdir, readFile, rm } from "fs/promises";
 import os from "os";
 import path from "path";
 import { promisify } from "util";
+import * as cheerio from "cheerio";
 import { getOCRProvider } from "@/lib/providers/ocr";
 import { recordUsage } from "@/lib/services/usage/service";
 
@@ -19,6 +20,8 @@ export interface WeChatFetchResult {
 }
 
 const screenshotAttemptCount = parsePositiveInteger(process.env.WECHAT_SCREENSHOT_OCR_ATTEMPTS, 2);
+const WECHAT_USER_AGENT =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.45";
 
 export function isWeChatArticleUrl(url: string) {
   try {
@@ -35,6 +38,17 @@ export async function fetchWeChatArticleContent(input: {
   relatedId: string;
 }): Promise<WeChatFetchResult> {
   const domain = new URL(input.url).hostname;
+  const html = await tryHtmlExtraction(input.url);
+  if (html) {
+    return {
+      ok: true,
+      title: html.title,
+      text: html.text,
+      domain,
+      strategy: "wechat_markdown"
+    };
+  }
+
   const markdown = await tryMarkdownExtraction(input.url);
   if (markdown) {
     return {
@@ -64,6 +78,31 @@ export async function fetchWeChatArticleContent(input: {
     strategy: "wechat_fallback",
     hint: "链接正文无法读取，已保存链接。你可以使用公众号自带的下载截图功能后上传图片。"
   };
+}
+
+export async function tryHtmlExtraction(url: string) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "user-agent": WECHAT_USER_AGENT,
+        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-language": "zh-CN,zh;q=0.9,en;q=0.8"
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(45000)
+    });
+    if (!response.ok) return null;
+    const $ = cheerio.load(await response.text());
+    const content = $("#js_content");
+    if (!content.length) return null;
+    content.find("script,style,noscript").remove();
+    const text = content.text().replace(/\n{3,}/g, "\n\n").trim();
+    if (!looksLikeUsableArticleText(text)) return null;
+    const title = $("#activity-name").text().trim() || firstNonEmptyLine(text);
+    return { title, text };
+  } catch {
+    return null;
+  }
 }
 
 async function tryMarkdownExtraction(url: string) {

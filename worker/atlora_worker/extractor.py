@@ -5,11 +5,14 @@ import tempfile
 import time
 from pathlib import Path
 
-from camoufox.async_api import AsyncCamoufox
-
-from .ocr import recognize_screenshot
+import requests
+from bs4 import BeautifulSoup
 
 CHALLENGE_MARKERS = ("环境异常", "完成验证", "访问过于频繁", "captcha", "verify")
+WECHAT_USER_AGENT = (
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.45"
+)
 
 
 def looks_like_article(text):
@@ -51,13 +54,50 @@ def extract_markdown(url, output_dir):
     return None
 
 
+def extract_html(url):
+    response = requests.get(
+        url,
+        headers={
+            "user-agent": WECHAT_USER_AGENT,
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+        },
+        timeout=45,
+    )
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, "html.parser")
+    content = soup.select_one("#js_content")
+    if not content:
+        return None
+    for tag in content.select("script,style,noscript"):
+        tag.decompose()
+    title = None
+    title_node = soup.select_one("#activity-name")
+    if title_node:
+        title = title_node.get_text(" ", strip=True)
+    text = content.get_text("\n", strip=True)
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+    if looks_like_article(text):
+        return {"title": title, "text": text}
+    return None
+
+
 async def capture_screenshot(url, output_path):
+    from camoufox.async_api import AsyncCamoufox
+
     async with AsyncCamoufox(headless=True) as browser:
-        page = await browser.new_page(viewport={"width": 1280, "height": 1800})
+        page = await browser.new_page(viewport={"width": 1280, "height": 1800}, user_agent=WECHAT_USER_AGENT)
         await page.goto(url, wait_until="domcontentloaded", timeout=45000)
-        await page.wait_for_selector("#js_content", timeout=20000)
-        await page.wait_for_timeout(1500)
-        await page.screenshot(path=str(output_path), full_page=True)
+        try:
+            await page.wait_for_selector("#js_content", timeout=20000)
+        except Exception:
+            pass
+        await page.wait_for_timeout(2500)
+        content = page.locator("#js_content")
+        if await content.count():
+            await content.first.screenshot(path=str(output_path))
+        else:
+            await page.screenshot(path=str(output_path), full_page=True)
 
 
 def extract_article(url, on_stage):
@@ -65,6 +105,20 @@ def extract_article(url, on_stage):
     with tempfile.TemporaryDirectory(prefix="atlora-wechat-") as temporary:
         temporary_path = Path(temporary)
         on_stage("extracting_text")
+        started = time.monotonic()
+        try:
+            html = extract_html(url)
+        except requests.RequestException:
+            html = None
+        durations["html"] = round((time.monotonic() - started) * 1000)
+        if html:
+            return {
+                **html,
+                "strategy": "wechat_markdown",
+                "confidence": 1.0,
+                "durationsMs": durations,
+            }
+
         started = time.monotonic()
         try:
             markdown = extract_markdown(url, temporary_path / "markdown")
@@ -86,6 +140,8 @@ def extract_article(url, on_stage):
         durations["screenshot"] = round((time.monotonic() - started) * 1000)
         on_stage("recognizing_text")
         started = time.monotonic()
+        from .ocr import recognize_screenshot
+
         ocr = recognize_screenshot(screenshot)
         durations["ocr"] = round((time.monotonic() - started) * 1000)
         if not looks_like_article(ocr["text"]):
