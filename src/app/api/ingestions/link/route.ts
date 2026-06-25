@@ -11,7 +11,8 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
   const parsed = linkIngestionSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "请输入有效链接" }, { status: 400 });
-  if (!isWeChatArticleUrl(parsed.data.url)) {
+  const wechatAsyncEnabled = process.env.WECHAT_INGESTION_ENABLED === "true";
+  if (!isWeChatArticleUrl(parsed.data.url) || !wechatAsyncEnabled) {
     try {
       const card = await ingestLink({
         userId: user.id,

@@ -10,3 +10,8 @@ test("WeChat ingestion returns an asynchronous id while normal links keep existi
   assert.match(source, /ingestLink/);
   assert.match(source, /enqueueWeChat/);
 });
+
+test("WeChat ingestion is gated by WECHAT_INGESTION_ENABLED feature flag", async () => {
+  const source = await readFile(new URL("./route.ts", import.meta.url), "utf8");
+  assert.match(source, /WECHAT_INGESTION_ENABLED/);
+});
