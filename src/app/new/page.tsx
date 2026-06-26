@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, ImageIcon, LinkIcon, LoaderCircle } from "lucide-react";
@@ -106,7 +107,9 @@ function NewMaterialContent() {
   async function submitText(formData: FormData) {
     await submit("/api/ingestions/text", { text: formData.get("text"), templateId }, copy.newMaterial.generating);
   }
-  async function submitLink(formData: FormData) {
+  async function submitLink(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     setLoading(true);
     setLoadingLabel(copy.newMaterial.reading);
     setError("");
@@ -203,7 +206,7 @@ function NewMaterialContent() {
           </form>
         )}
         {tab === "link" && (
-          <form action={submitLink} className="mt-5 space-y-4">
+          <form onSubmit={submitLink} className="mt-5 space-y-4">
             <Input name="url" type="url" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder={copy.newMaterial.urlPlaceholder} required className="border-[#354039] bg-[#101412] text-[#f4f1e8] placeholder:text-[#7f897f] focus:ring-[#d9e7c6]" />
             <Button disabled={loading} className="bg-[#d9e7c6] text-[#172018] hover:bg-[#c7dab0]">{loading ? copy.newMaterial.reading : copy.newMaterial.generateLink}</Button>
             {loading ? <LinkIngestionProgress stage={ingestionStage} stages={stageSets.link} elapsedMs={loadingElapsedMs} waitedLabel={copy.newMaterial.stages.waited} /> : null}

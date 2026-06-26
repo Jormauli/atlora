@@ -24,3 +24,9 @@ test("link ingestion polls real backend stages and survives refresh", () => {
   assert.ok(pageSource.includes("LinkIngestionProgress"));
   assert.ok(pageSource.includes("generating_card"));
 });
+
+test("link ingestion uses submit event state updates so progress renders before fetch completes", () => {
+  assert.ok(pageSource.includes("async function submitLink(event: React.FormEvent<HTMLFormElement>)"));
+  assert.ok(pageSource.includes("event.preventDefault()"));
+  assert.ok(pageSource.includes("<form onSubmit={submitLink}"));
+});
