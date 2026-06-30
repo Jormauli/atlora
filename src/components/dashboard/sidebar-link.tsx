@@ -19,12 +19,12 @@ export function SidebarLink({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[#b9b1a3] hover:bg-white/[0.06] ${active ? "bg-white/[0.08] text-[#f4f1e8]" : ""}`}
+      className={`flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-[#b4b4b1] hover:bg-white/[0.06] hover:text-white ${active ? "bg-white/[0.08] text-[#f3f3f1]" : ""}`}
     >
       {icon}
-      <span>{label}</span>
-      {badge !== undefined ? <span className="ml-auto rounded bg-[#222a25] px-1.5 text-xs text-[#a9b1a9]">{badge}</span> : null}
-      {shortcut ? <span className="ml-auto text-xs text-[#7f897f]">{shortcut}</span> : null}
+      <span className="min-w-0 truncate">{label}</span>
+      {badge !== undefined ? <span className="ml-auto inline-flex min-w-6 items-center justify-center rounded bg-[#242424] px-1.5 text-xs leading-5 text-[#b4b4b1]">{badge}</span> : null}
+      {shortcut ? <span className="ml-auto text-xs leading-none text-[#8f8f8a]">{shortcut}</span> : null}
     </Link>
   );
 }

@@ -33,3 +33,14 @@ test("card detail modal uses the global language state for interface labels only
   assert.ok(!modalSource.includes("useState<\"zh\" | \"en\">"));
   assert.ok(!modalSource.includes("getLocalizedCardContent"));
 });
+
+test("card detail modal follows the neutral open design reader surface", () => {
+  assert.ok(modalSource.includes("bg-[#171717]"));
+  assert.ok(modalSource.includes("border-[#2f2f2f]"));
+  assert.ok(modalSource.includes("#4f6f8f"));
+  assert.ok(modalSource.includes("#b48745"));
+  assert.ok(modalSource.includes("#9a554b"));
+  assert.ok(modalSource.includes("items-center justify-center"));
+  assert.ok(!modalSource.includes("bg-[#171d1a]"));
+  assert.ok(!modalSource.includes("bg-[#d9e7c6] px-5 py-2 text-sm font-medium text-[#172018]"));
+});

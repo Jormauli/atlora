@@ -169,46 +169,48 @@ function NewMaterialContent() {
     <>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-xs uppercase tracking-[0.16em] text-[#9ba79d]">{copy.newMaterial.eyebrow}</div>
+          <div className="text-xs uppercase tracking-[0.16em] text-[#8f8f8a]">{copy.newMaterial.eyebrow}</div>
           <h1 className="mt-1 text-2xl font-semibold">{copy.newMaterial.title}</h1>
-          <p className="mt-1 text-sm text-[#b9b1a3]">{copy.newMaterial.description}</p>
+          <p className="mt-1 text-sm text-[#b4b4b1]">{copy.newMaterial.description}</p>
         </div>
       </header>
-      <div className="mt-6 rounded-md border border-[#354039] bg-[#171d1a] p-5 shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+      <div className="mt-6 rounded-md border border-[#2f2f2f] bg-[#171717] p-5 shadow-[0_1px_0_rgba(0,0,0,0.2)]">
         <div className="grid gap-2 sm:grid-cols-3">
           {(["text", "image", "link"] as const).map((item) => (
             <button
               key={item}
               onClick={() => setTab(item)}
-              className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition ${tab === item ? "border-[#9bb27e] bg-[#d9e7c6] text-[#172018]" : "border-[#354039] bg-[#101412] text-[#c9c2b6] hover:bg-white/[0.06]"}`}
+              className={`flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm leading-none transition ${
+                tab === item ? "border-[#4f6f8f] bg-[#e7e7e3] text-[#111111]" : "border-[#2f2f2f] bg-[#111111] text-[#d8d8d5] hover:bg-white/[0.06]"
+              }`}
             >
               {item === "text" ? <FileText className="h-4 w-4" /> : item === "image" ? <ImageIcon className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
-              {item === "text" ? copy.newMaterial.textTab : item === "image" ? copy.newMaterial.imageTab : copy.newMaterial.linkTab}
+              <span className="min-w-0 truncate">{item === "text" ? copy.newMaterial.textTab : item === "image" ? copy.newMaterial.imageTab : copy.newMaterial.linkTab}</span>
             </button>
           ))}
         </div>
-        <label className="mt-5 block text-sm font-medium text-[#d8d2c6]">{copy.newMaterial.viewLabel}</label>
-        <Select className="mt-2 max-w-xs border-[#354039] bg-[#101412] text-[#f4f1e8] focus:ring-[#d9e7c6]" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
+        <label className="mt-5 block text-sm font-medium text-[#d8d8d5]">{copy.newMaterial.viewLabel}</label>
+        <Select className="mt-2 max-w-xs border-[#2f2f2f] bg-[#111111] text-[#f3f3f1] focus:ring-[#4f6f8f]" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
           {templates.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </Select>
         {tab === "text" && (
           <form action={submitText} className="mt-5 space-y-4">
-            <Textarea name="text" rows={10} placeholder={copy.newMaterial.textPlaceholder} required className="border-[#354039] bg-[#101412] text-[#f4f1e8] placeholder:text-[#7f897f] focus:ring-[#d9e7c6]" />
-            <Button disabled={loading} className="bg-[#d9e7c6] text-[#172018] hover:bg-[#c7dab0]">{loading ? loadingLabel : copy.newMaterial.generateDraft}</Button>
+            <Textarea name="text" rows={10} placeholder={copy.newMaterial.textPlaceholder} required className="border-[#2f2f2f] bg-[#111111] text-[#f3f3f1] placeholder:text-[#767672] focus:ring-[#4f6f8f]" />
+            <Button disabled={loading} className="border border-[#4f6f8f] bg-[#e7e7e3] leading-none text-[#111111] hover:bg-white">{loading ? loadingLabel : copy.newMaterial.generateDraft}</Button>
             {loading ? <LoadingProgress stages={stageSets.text} elapsedMs={loadingElapsedMs} waitedLabel={copy.newMaterial.stages.waited} /> : null}
           </form>
         )}
         {tab === "image" && (
           <form action={submitImage} className="mt-5 space-y-4">
-            <Input name="file" type="file" accept=".jpg,.jpeg,.png,.webp" required className="border-[#354039] bg-[#101412] text-[#f4f1e8] file:mr-3 file:rounded file:border-0 file:bg-[#d9e7c6] file:px-3 file:py-1 file:text-sm file:text-[#172018] focus:ring-[#d9e7c6]" />
-            <Button disabled={loading} className="bg-[#d9e7c6] text-[#172018] hover:bg-[#c7dab0]">{loading ? loadingLabel : copy.newMaterial.uploadGenerate}</Button>
+            <Input name="file" type="file" accept=".jpg,.jpeg,.png,.webp" required className="border-[#2f2f2f] bg-[#111111] text-[#f3f3f1] file:mr-3 file:rounded file:border-0 file:bg-[#e7e7e3] file:px-3 file:py-1 file:text-sm file:text-[#111111] focus:ring-[#4f6f8f]" />
+            <Button disabled={loading} className="border border-[#4f6f8f] bg-[#e7e7e3] leading-none text-[#111111] hover:bg-white">{loading ? loadingLabel : copy.newMaterial.uploadGenerate}</Button>
             {loading ? <LoadingProgress stages={stageSets.image} elapsedMs={loadingElapsedMs} waitedLabel={copy.newMaterial.stages.waited} /> : null}
           </form>
         )}
         {tab === "link" && (
           <form onSubmit={submitLink} className="mt-5 space-y-4">
-            <Input name="url" type="url" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder={copy.newMaterial.urlPlaceholder} required className="border-[#354039] bg-[#101412] text-[#f4f1e8] placeholder:text-[#7f897f] focus:ring-[#d9e7c6]" />
-            <Button disabled={loading} className="bg-[#d9e7c6] text-[#172018] hover:bg-[#c7dab0]">{loading ? copy.newMaterial.reading : copy.newMaterial.generateLink}</Button>
+            <Input name="url" type="url" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder={copy.newMaterial.urlPlaceholder} required className="border-[#2f2f2f] bg-[#111111] text-[#f3f3f1] placeholder:text-[#767672] focus:ring-[#4f6f8f]" />
+            <Button disabled={loading} className="border border-[#4f6f8f] bg-[#e7e7e3] leading-none text-[#111111] hover:bg-white">{loading ? copy.newMaterial.reading : copy.newMaterial.generateLink}</Button>
             {loading ? <LinkIngestionProgress stage={ingestionStage} stages={stageSets.link} elapsedMs={loadingElapsedMs} waitedLabel={copy.newMaterial.stages.waited} /> : null}
           </form>
         )}
@@ -238,18 +240,18 @@ function LoadingProgress({ stages, elapsedMs, waitedLabel }: { stages: LoadingSt
   const progress = Math.min(92, 12 + activeStageIndex * 24 + elapsedMs / 1400);
 
   return (
-    <div className="rounded-md border border-[#354039] bg-[#101412] px-4 py-3 text-sm">
+    <div className="rounded-md border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm">
       <div className="flex items-center justify-between gap-4">
-        <p className="font-medium text-[#f4f1e8]">{activeStage.label}</p>
-        <p className="text-xs text-[#9ba79d]">{waitedLabel} {Math.max(1, Math.ceil(elapsedMs / 1000))}s</p>
+        <p className="font-medium text-[#f3f3f1]">{activeStage.label}</p>
+        <p className="text-xs text-[#8f8f8a]">{waitedLabel} {Math.max(1, Math.ceil(elapsedMs / 1000))}s</p>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#29302d]">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#242424]">
         <div
-          className="h-full rounded-full bg-[#d9e7c6] transition-[width] duration-300"
+          className="h-full rounded-full bg-[#4f6f8f] transition-[width] duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <p className="mt-2 text-[#b9b1a3]">{activeStage.detail}</p>
+      <p className="mt-2 text-[#b4b4b1]">{activeStage.detail}</p>
     </div>
   );
 }
@@ -271,15 +273,15 @@ function LinkIngestionProgress({ stage, stages, elapsedMs, waitedLabel }: {
   const stageIndex = Math.max(backendStageIndex, findActiveStageIndex(stages, elapsedMs));
   const activeStage = stages[stageIndex];
   return (
-    <div className="rounded-md border border-[#354039] bg-[#101412] px-4 py-3 text-sm" aria-live="polite">
+    <div className="rounded-md border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm" aria-live="polite">
       <div className="flex items-center justify-between gap-4">
-        <p className="flex items-center gap-2 font-medium text-[#f4f1e8]">
-          <LoaderCircle className="h-4 w-4 animate-spin text-[#d9e7c6]" />
+        <p className="flex items-center gap-2 font-medium text-[#f3f3f1]">
+          <LoaderCircle className="h-4 w-4 animate-spin text-[#4f6f8f]" />
           {activeStage.label}
         </p>
-        <p className="text-xs text-[#9ba79d]">{waitedLabel} {Math.max(1, Math.ceil(elapsedMs / 1000))}s</p>
+        <p className="text-xs text-[#8f8f8a]">{waitedLabel} {Math.max(1, Math.ceil(elapsedMs / 1000))}s</p>
       </div>
-      <p className="mt-2 text-[#b9b1a3]">{activeStage.detail}</p>
+      <p className="mt-2 text-[#b4b4b1]">{activeStage.detail}</p>
     </div>
   );
 }

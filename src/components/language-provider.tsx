@@ -55,13 +55,15 @@ export function useLanguage() {
 export function LanguageToggle() {
   const { language, setLanguage } = useLanguage();
   return (
-    <div className="flex rounded-md border border-[#354039] bg-[#101412] p-0.5 text-xs">
+    <div className="inline-flex items-center rounded-md border border-[#3a3a3a] bg-[#111111] p-0.5 text-xs text-[#b4b4b1]">
       {(["zh", "en"] as const).map((item) => (
         <button
           key={item}
           type="button"
           onClick={() => setLanguage(item)}
-          className={`h-7 rounded px-2 ${language === item ? "bg-[#d9e7c6] text-[#172018]" : "text-[#b9b1a3] hover:bg-white/[0.06]"}`}
+          className={`inline-flex h-7 min-w-[2.5rem] items-center justify-center rounded px-2 leading-none ${
+            language === item ? "bg-[#e7e7e3] text-[#111111]" : "text-[#b4b4b1] hover:bg-white/[0.06] hover:text-white"
+          }`}
         >
           {item === "zh" ? "中文" : "EN"}
         </button>
@@ -74,12 +76,14 @@ export function LocaleLanguageToggle({ locale }: { locale: UiLanguage }) {
   const { setLanguage } = useLanguage();
 
   return (
-    <div className="flex rounded-md border border-[#354039] bg-[#101412] p-0.5 text-xs">
+    <div className="inline-flex items-center rounded-md border border-[#3a3a3a] bg-[#111111] p-0.5 text-xs text-[#b4b4b1]">
       <Link
         href="/zh"
         aria-current={locale === "zh" ? "page" : undefined}
         onClick={() => setLanguage("zh")}
-        className={`h-7 rounded px-2 ${locale === "zh" ? "bg-[#d9e7c6] text-[#172018]" : "text-[#b9b1a3] hover:bg-white/[0.06]"}`}
+        className={`inline-flex h-7 min-w-[2.5rem] items-center justify-center rounded px-2 leading-none ${
+          locale === "zh" ? "bg-[#e7e7e3] text-[#111111]" : "text-[#b4b4b1] hover:bg-white/[0.06] hover:text-white"
+        }`}
       >
         中文
       </Link>
@@ -87,7 +91,9 @@ export function LocaleLanguageToggle({ locale }: { locale: UiLanguage }) {
         href="/en"
         aria-current={locale === "en" ? "page" : undefined}
         onClick={() => setLanguage("en")}
-        className={`h-7 rounded px-2 ${locale === "en" ? "bg-[#d9e7c6] text-[#172018]" : "text-[#b9b1a3] hover:bg-white/[0.06]"}`}
+        className={`inline-flex h-7 min-w-[2.5rem] items-center justify-center rounded px-2 leading-none ${
+          locale === "en" ? "bg-[#e7e7e3] text-[#111111]" : "text-[#b4b4b1] hover:bg-white/[0.06] hover:text-white"
+        }`}
       >
         EN
       </Link>

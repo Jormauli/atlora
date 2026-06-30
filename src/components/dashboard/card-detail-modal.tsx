@@ -89,21 +89,26 @@ export function CardDetailModal({
   return (
     <div className="reader-backdrop-enter fixed inset-0 z-50 bg-black/70" onClick={onClose}>
       <article
-        className="reader-panel-transition fixed max-h-[88vh] overflow-y-auto overscroll-contain rounded-[10px] border border-[#344039] bg-[#171d1a] p-0 text-[#f4f1e8] shadow-2xl"
+        className="reader-panel-transition fixed max-h-[88vh] overflow-y-auto overscroll-contain rounded-[10px] border border-[#2f2f2f] bg-[#171717] p-0 text-[#f3f3f1] shadow-2xl"
         style={panelStyle}
         onClick={(event) => event.stopPropagation()}
       >
         <div className={`reader-panel-content ${entered ? "reader-panel-content-visible" : ""}`}>
-          <div className="border-b border-[#29302d] bg-[#121714] px-5 py-4">
+          <div className="border-b border-[#2f2f2f] bg-[#151515] px-5 py-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex min-w-0 gap-3">
                 <span className="mt-1 hidden sm:block">
                   <PlanetGlyph size="lg" />
                 </span>
                 <div className="min-w-0">
-                <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#9ba79d]">{cardCopy.archive} / {card.category}</div>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight">{card.title}</h2>
-                {card.sourceTitle ? <p className="mt-2 text-sm text-[#b9b1a3]">{cardCopy.sourceTitle}: {card.sourceTitle}</p> : null}
+                  <div className="text-xs font-medium uppercase tracking-[0.14em] text-[#8f8f8a]">{cardCopy.archive} / {card.category}</div>
+                  <h2 className="mt-3 text-2xl font-semibold leading-tight">{card.title}</h2>
+                  {card.sourceTitle ? <p className="mt-2 text-sm text-[#b4b4b1]">{cardCopy.sourceTitle}: {card.sourceTitle}</p> : null}
+                  <div className="mt-3 flex h-1.5 w-28 overflow-hidden rounded-full bg-[#242424]" aria-hidden="true">
+                    <span className="h-full flex-1 bg-[#4f6f8f]" />
+                    <span className="h-full flex-1 bg-[#b48745]" />
+                    <span className="h-full flex-1 bg-[#9a554b]" />
+                  </div>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -111,7 +116,7 @@ export function CardDetailModal({
                   type="button"
                   onClick={onClose}
                   aria-label={cardCopy.close}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#b9b1a3] hover:bg-white/[0.08]"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#b4b4b1] hover:bg-white/[0.08] hover:text-white"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -121,7 +126,7 @@ export function CardDetailModal({
 
           <div className="px-5 pb-5">
             <DetailSection title={cardCopy.overview}>
-              <p className="rounded-lg border border-[#344039] bg-[#101412] px-4 py-3 text-sm leading-7 text-[#d8d2c6] shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+              <p className="rounded-lg border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm leading-7 text-[#d8d8d5] shadow-[0_1px_0_rgba(0,0,0,0.22)]">
                 {card.summary}
               </p>
             </DetailSection>
@@ -131,12 +136,12 @@ export function CardDetailModal({
                 {card.keyPoints.slice(0, 3).map((item, index) => {
                   const parsed = parseKeyPoint(item);
                   return (
-                    <div key={`${item}-${index}`} className="rounded-lg border border-[#344039] bg-[#101412] px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+                    <div key={`${item}-${index}`} className="rounded-lg border border-[#2f2f2f] bg-[#111111] px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,0.22)]">
                       <div className="flex gap-2 text-sm font-medium">
-                        <span className="text-[#9ba79d]">{index + 1}.</span>
+                        <span className="text-[#8f8f8a]">{index + 1}.</span>
                         <span>{parsed.point}</span>
                       </div>
-                      {parsed.evidence ? <p className="mt-2 text-sm leading-6 text-[#b9b1a3]">{parsed.evidence}</p> : null}
+                      {parsed.evidence ? <p className="mt-2 text-sm leading-6 text-[#b4b4b1]">{parsed.evidence}</p> : null}
                     </div>
                   );
                 })}
@@ -144,7 +149,7 @@ export function CardDetailModal({
             </DetailSection>
 
             <DetailSection title={cardCopy.insights}>
-              <div className="rounded-lg border border-[#344039] bg-[#101412] px-4 py-3 text-sm leading-7 text-[#d8d2c6] shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+              <div className="rounded-lg border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm leading-7 text-[#d8d8d5] shadow-[0_1px_0_rgba(0,0,0,0.22)]">
                 {visibleRolePerspectives.length ? (
                   <ol className="space-y-1">
                     {visibleRolePerspectives.map((item, index) => <li key={`${item}-${index}`}>{index + 1}. {item}</li>)}
@@ -157,14 +162,14 @@ export function CardDetailModal({
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
               {card.tags.map((tag) => (
-                <span key={tag} className="rounded border border-[#354039] bg-[#202821] px-2 py-1 text-xs text-[#c9c2b6]">{tag}</span>
+                <span key={tag} className="rounded border border-[#2f2f2f] bg-[#242424] px-2 py-1 text-xs text-[#b4b4b1]">{tag}</span>
               ))}
               {card.sourceUrl ? (
                 <a
                   href={card.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[#c9e8f4] hover:bg-white/[0.06]"
+                  className="ml-auto inline-flex items-center justify-center gap-1 rounded-md px-2 py-1 text-xs leading-none text-[#8fb1d1] hover:bg-white/[0.06]"
                 >
                   {cardCopy.source}
                   <ArrowUpRight className="h-3 w-3" />
@@ -182,7 +187,7 @@ export function CardDetailModal({
                     type="button"
                     onClick={deleteCard}
                     disabled={deleting}
-                    className="rounded-md bg-[#f3b4ac] px-4 py-2 text-sm font-medium text-[#2b1110] disabled:opacity-60"
+                    className="inline-flex items-center justify-center rounded-md bg-[#f3b4ac] px-4 py-2 text-sm font-medium leading-none text-[#2b1110] disabled:opacity-60"
                   >
                     {deleting ? cardCopy.deleting : cardCopy.confirmDelete}
                   </button>
@@ -192,7 +197,7 @@ export function CardDetailModal({
                       setConfirmingDelete(false);
                       setDeleteError("");
                     }}
-                    className="rounded-md border border-[#6b3b3b] px-4 py-2 text-sm text-[#f0c8c8] hover:bg-white/[0.06]"
+                    className="inline-flex items-center justify-center rounded-md border border-[#6b3b3b] px-4 py-2 text-sm leading-none text-[#f0c8c8] hover:bg-white/[0.06]"
                   >
                     {cardCopy.cancel}
                   </button>
@@ -201,12 +206,12 @@ export function CardDetailModal({
             ) : null}
 
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              <button onClick={onClose} className="rounded-md bg-[#d9e7c6] px-5 py-2 text-sm font-medium text-[#172018] hover:bg-[#c7dab0]">{cardCopy.close}</button>
-              <Link href={`/cards/${card.id}`} className="rounded-md border border-[#354039] px-5 py-2 text-sm text-[#d8d2c6] hover:bg-white/[0.06]">{cardCopy.edit}</Link>
+              <button onClick={onClose} className="inline-flex items-center justify-center rounded-md border border-[#4f6f8f] bg-[#e7e7e3] px-5 py-2 text-sm font-medium leading-none text-[#111111] hover:bg-white">{cardCopy.close}</button>
+              <Link href={`/cards/${card.id}`} className="inline-flex items-center justify-center rounded-md border border-[#3a3a3a] px-5 py-2 text-sm leading-none text-[#d8d8d5] hover:bg-white/[0.06]">{cardCopy.edit}</Link>
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
-                className="inline-flex items-center gap-2 rounded-md border border-[#6b3b3b] px-5 py-2 text-sm text-[#f0c8c8] hover:bg-[#261717]"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-[#6b3b3b] px-5 py-2 text-sm leading-none text-[#f0c8c8] hover:bg-[#261717]"
               >
                 <Trash2 className="h-4 w-4" />
                 {cardCopy.delete}

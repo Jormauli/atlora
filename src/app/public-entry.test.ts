@@ -110,6 +110,17 @@ test("language provider accepts an initial language and exposes crawlable locale
   assert.ok(languageProvider.includes("export function LanguageToggle"));
 });
 
+test("language toggles keep labels visually centered across public and signed-in surfaces", () => {
+  const languageProvider = readFileSync(path.join(root, "src/components/language-provider.tsx"), "utf8");
+
+  assert.ok(languageProvider.includes("items-center justify-center"));
+  assert.ok(languageProvider.includes("leading-none"));
+  assert.ok(languageProvider.includes("min-w-[2.5rem]"));
+  assert.ok(languageProvider.includes("bg-[#e7e7e3] text-[#111111]"));
+  assert.ok(languageProvider.includes("border-[#3a3a3a] bg-[#111111]"));
+  assert.ok(!languageProvider.includes("bg-[#d9e7c6] text-[#172018]"));
+});
+
 test("root layout renders the request language and production metadata base", () => {
   const rootLayout = readFileSync(path.join(root, "src/app/layout.tsx"), "utf8");
 
