@@ -20,6 +20,9 @@ test("card detail modal recalculates panel geometry when the viewport changes", 
   assert.ok(modalSource.includes("window.removeEventListener(\"resize\", updateViewportSize)"));
   assert.ok(modalSource.includes("width: window.innerWidth"));
   assert.ok(modalSource.includes("height: window.innerHeight"));
+  assert.ok(modalSource.includes("width: \"min(768px, calc(100vw - 32px))\""));
+  assert.ok(modalSource.includes("minHeight: \"min(620px, calc(88vh - 32px))\""));
+  assert.ok(modalSource.includes("transform: entered ? \"translate3d(-50%, 0, 0) scale(1, 1)\""));
 });
 
 test("card detail modal deletes only after an inline confirmation", () => {

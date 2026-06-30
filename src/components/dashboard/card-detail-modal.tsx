@@ -48,7 +48,7 @@ export function CardDetailModal({
   const panelHeight = Math.min(620, viewportHeight * 0.88 - 32);
   const panelTop = Math.min(Math.max(16, viewportHeight * 0.06), 56);
   const panelLeft = Math.max(16, (viewportWidth - panelWidth) / 2);
-  const fromTransform = `translate3d(${originRect.left - panelLeft}px, ${originRect.top - panelTop}px, 0) scale(${originRect.width / panelWidth}, ${originRect.height / panelHeight})`;
+  const fromTransform = `translate3d(calc(-50% + ${originRect.left - panelLeft}px), ${originRect.top - panelTop}px, 0) scale(${originRect.width / panelWidth}, ${originRect.height / panelHeight})`;
   const cardCopy = copy.card;
   const visibleRolePerspectives = filterRolePerspectives(card.rolePerspectives, selectedRoleLabels);
 
@@ -94,12 +94,12 @@ export function CardDetailModal({
   }, []);
 
   const panelStyle = {
-    top: `${panelTop}px`,
-    left: `${panelLeft}px`,
-    width: `${panelWidth}px`,
-    minHeight: `${panelHeight}px`,
+    top: "clamp(16px, 6vh, 56px)",
+    left: "50%",
+    width: "min(768px, calc(100vw - 32px))",
+    minHeight: "min(620px, calc(88vh - 32px))",
     opacity: entered ? 1 : 0.76,
-    transform: entered ? "translate3d(0, 0, 0) scale(1, 1)" : fromTransform
+    transform: entered ? "translate3d(-50%, 0, 0) scale(1, 1)" : fromTransform
   } as CSSProperties;
 
   return (
