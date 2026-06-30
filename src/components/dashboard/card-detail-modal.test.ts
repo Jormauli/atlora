@@ -55,3 +55,10 @@ test("card detail modal follows the neutral open design reader surface", () => {
   assert.ok(!modalSource.includes("bg-[#171d1a]"));
   assert.ok(!modalSource.includes("bg-[#d9e7c6] px-5 py-2 text-sm font-medium text-[#172018]"));
 });
+
+test("card detail modal shows knowledge concepts and related cards", () => {
+  assert.ok(modalSource.includes("cardCopy.knowledgeConcepts"));
+  assert.ok(modalSource.includes("card.knowledgeConcepts.map"));
+  assert.ok(modalSource.includes("cardCopy.relatedCards"));
+  assert.ok(modalSource.includes("card.relatedCards.map"));
+});

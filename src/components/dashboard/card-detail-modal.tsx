@@ -164,6 +164,26 @@ export function CardDetailModal({
               </div>
             </DetailSection>
 
+            <DetailSection title={cardCopy.knowledgeConcepts}>
+              {card.knowledgeConcepts.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {card.knowledgeConcepts.map((concept) => (
+                    <span
+                      key={concept.id}
+                      title={concept.evidence ?? concept.description ?? concept.name}
+                      className="rounded-md border border-[#2f2f2f] bg-[#111111] px-2.5 py-1.5 text-xs text-[#d8d8d5]"
+                    >
+                      {concept.name}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm text-[#8f8f8a]">
+                  {cardCopy.noKnowledgeConcepts}
+                </p>
+              )}
+            </DetailSection>
+
             <DetailSection title={cardCopy.insights}>
               <div className="rounded-lg border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm leading-7 text-[#d8d8d5] shadow-[0_1px_0_rgba(0,0,0,0.22)]">
                 {visibleRolePerspectives.length ? (
@@ -174,6 +194,27 @@ export function CardDetailModal({
                   <p>{cardCopy.noInsights}</p>
                 )}
               </div>
+            </DetailSection>
+
+            <DetailSection title={cardCopy.relatedCards}>
+              {card.relatedCards.length ? (
+                <div className="space-y-2">
+                  {card.relatedCards.map((related) => (
+                    <Link
+                      key={related.id}
+                      href={`/cards/${related.id}`}
+                      className="block rounded-lg border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm text-[#d8d8d5] hover:bg-white/[0.06]"
+                    >
+                      <span className="block font-medium text-[#f3f3f1]">{related.title}</span>
+                      <span className="mt-1 block text-xs text-[#b4b4b1]">{related.reason}</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-[#2f2f2f] bg-[#111111] px-4 py-3 text-sm text-[#8f8f8a]">
+                  {cardCopy.noRelatedCards}
+                </p>
+              )}
             </DetailSection>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
