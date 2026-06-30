@@ -55,6 +55,30 @@ enum CardVisibility {
   paid
 }
 
+enum GraphEntitySource {
+  ai
+  user
+  system
+}
+
+enum KnowledgeConceptStatus {
+  active
+  merged
+  hidden
+}
+
+enum ConceptRelationStatus {
+  active
+  rejected
+  merged
+}
+
+enum ConceptRelevance {
+  high
+  medium
+  low
+}
+
 enum StorageType {
   temp
   permanent
@@ -83,19 +107,22 @@ enum UsageType {
 }
 
 model User {
-  id           String           @id @default(cuid())
-  email        String           @unique
-  passwordHash String
-  nickname     String?
-  avatarUrl    String?
-  status       UserStatus       @default(active)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  profile      UserProfile?
-  ingestions   IngestionItem[]
-  cards        Card[]
-  files        File[]
-  usageLedgers UsageLedger[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String
+  nickname          String?
+  avatarUrl         String?
+  status            UserStatus         @default(active)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  profile           UserProfile?
+  ingestions        IngestionItem[]
+  cards             Card[]
+  tags              Tag[]
+  knowledgeConcepts KnowledgeConcept[]
+  conceptRelations  ConceptRelation[]
+  files             File[]
+  usageLedgers      UsageLedger[]
 }
 
 model UserProfile {
@@ -111,25 +138,25 @@ model UserProfile {
 }
 
 model IngestionItem {
-  id               String            @id @default(cuid())
-  userId           String
-  sourceChannel    SourceChannel     @default(web)
-  sourceType       SourceType
-  rawText          String?
-  rawUrl           String?
-  tempFileId       String?
-  status           IngestionStatus   @default(received)
-  stage            IngestionStage    @default(queued)
-  templateId       String?
-  failureCode      String?
-  errorMessage     String?
+  id                    String            @id @default(cuid())
+  userId                String
+  sourceChannel         SourceChannel     @default(web)
+  sourceType            SourceType
+  rawText               String?
+  rawUrl                String?
+  tempFileId            String?
+  status                IngestionStatus   @default(received)
+  stage                 IngestionStage    @default(queued)
+  templateId            String?
+  failureCode           String?
+  errorMessage          String?
   processingStartedAt   DateTime?
   processingCompletedAt DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  processingResult ProcessingResult?
-  card             Card?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  processingResult      ProcessingResult?
+  card                  Card?
 
   @@index([userId, status, createdAt])
   @@index([userId, createdAt])
@@ -149,37 +176,131 @@ model ProcessingResult {
 }
 
 model Card {
-  id           String         @id @default(cuid())
-  userId       String
-  ingestionItemId String?        @unique
-  title        String
-  summary      String
-  keyPoints    Json
-  actionItems  Json
-  frameworkStructure Json?
-  criticalEvidence   Json?
-  reusableInsights   Json?
-  usedModels         Json?
-  connections        Json?
-  rolePerspectives   Json?
-  localizedContent   Json?
-  tags         Json
-  category     String
-  cardType     String
-  perspective  String
-  sourceType   SourceType
-  sourceUrl    String?
-  sourceTitle  String?
-  sourceDomain String?
-  aiTemplateId String
-  status       CardStatus     @default(draft)
-  visibility   CardVisibility @default(private)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ingestionItem IngestionItem? @relation(fields: [ingestionItemId], references: [id], onDelete: SetNull)
+  id                      String                    @id @default(cuid())
+  userId                  String
+  ingestionItemId         String?                   @unique
+  title                   String
+  summary                 String
+  keyPoints               Json
+  actionItems             Json
+  frameworkStructure      Json?
+  criticalEvidence        Json?
+  reusableInsights        Json?
+  usedModels              Json?
+  connections             Json?
+  rolePerspectives        Json?
+  localizedContent        Json?
+  tags                    Json
+  category                String
+  cardType                String
+  perspective             String
+  sourceType              SourceType
+  sourceUrl               String?
+  sourceTitle             String?
+  sourceDomain            String?
+  aiTemplateId            String
+  status                  CardStatus                @default(draft)
+  visibility              CardVisibility            @default(private)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingestionItem           IngestionItem?            @relation(fields: [ingestionItemId], references: [id], onDelete: SetNull)
+  cardTags                CardTag[]
+  cardConcepts            CardConcept[]
+  conceptRelationEvidence ConceptRelationEvidence[]
 
   @@index([userId, status, createdAt])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  aliases   Json      @default("[]")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards     CardTag[]
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt])
+}
+
+model CardTag {
+  cardId String
+  tagId  String
+  source GraphEntitySource @default(ai)
+  card   Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  tag    Tag               @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, tagId])
+  @@index([tagId])
+}
+
+model KnowledgeConcept {
+  id                String                 @id @default(cuid())
+  userId            String
+  canonicalName     String
+  aliases           Json                   @default("[]")
+  description       String?
+  status            KnowledgeConceptStatus @default(active)
+  mergedIntoId      String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mergedInto        KnowledgeConcept?      @relation("ConceptMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedConcepts    KnowledgeConcept[]     @relation("ConceptMerge")
+  cards             CardConcept[]
+  outgoingRelations ConceptRelation[]      @relation("SourceConcept")
+  incomingRelations ConceptRelation[]      @relation("TargetConcept")
+
+  @@unique([userId, canonicalName])
+  @@index([userId, status, updatedAt])
+}
+
+model CardConcept {
+  cardId    String
+  conceptId String
+  relevance ConceptRelevance  @default(medium)
+  evidence  String?
+  source    GraphEntitySource @default(ai)
+  card      Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  concept   KnowledgeConcept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, conceptId])
+  @@index([conceptId])
+}
+
+model ConceptRelation {
+  id              String                    @id @default(cuid())
+  userId          String
+  sourceConceptId String
+  relationType    String
+  targetConceptId String
+  confidence      Float                     @default(0.7)
+  status          ConceptRelationStatus     @default(active)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  user            User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceConcept   KnowledgeConcept          @relation("SourceConcept", fields: [sourceConceptId], references: [id], onDelete: Cascade)
+  targetConcept   KnowledgeConcept          @relation("TargetConcept", fields: [targetConceptId], references: [id], onDelete: Cascade)
+  evidence        ConceptRelationEvidence[]
+
+  @@unique([userId, sourceConceptId, relationType, targetConceptId])
+  @@index([userId, status, updatedAt])
+  @@index([targetConceptId])
+}
+
+model ConceptRelationEvidence {
+  relationId String
+  cardId     String
+  evidence   String?
+  source     GraphEntitySource @default(ai)
+  relation   ConceptRelation   @relation(fields: [relationId], references: [id], onDelete: Cascade)
+  card       Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([relationId, cardId])
+  @@index([cardId])
 }
 
 model File {
