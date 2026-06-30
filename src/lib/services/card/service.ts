@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { persistCardKnowledgeGraph } from "@/lib/services/knowledge-graph/service";
 import { recordUsage } from "@/lib/services/usage/service";
+import type { ConceptRelationCandidate, KnowledgeConceptCandidate } from "@/lib/services/knowledge-graph/types";
 
 export async function createDraftCard(input: {
   userId: string;
@@ -22,6 +24,8 @@ export async function createDraftCard(input: {
     perspective: string;
     source_title?: string | null;
     source_domain?: string | null;
+    knowledge_concepts?: KnowledgeConceptCandidate[];
+    concept_relations?: ConceptRelationCandidate[];
   };
   sourceType: "text" | "image" | "link";
   ingestionItemId?: string | null;
@@ -56,6 +60,13 @@ export async function createDraftCard(input: {
       sourceDomain: input.generated.source_domain,
       aiTemplateId: input.templateId
     }
+  });
+  await persistCardKnowledgeGraph({
+    userId: input.userId,
+    cardId: card.id,
+    tags: input.generated.tags,
+    concepts: input.generated.knowledge_concepts ?? [],
+    relations: input.generated.concept_relations ?? []
   });
   await recordUsage({
     userId: input.userId,
