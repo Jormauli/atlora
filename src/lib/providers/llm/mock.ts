@@ -33,6 +33,10 @@ export class MockLLMProvider implements LLMProvider {
         "【工具/技能】实操工具箱：推荐工具清单需回到原文核验；可复用方法是把观点与论据绑定；效率提升点是减少空泛摘要。"
       ],
       tags: [meta.category, "信息卡片", "观点论据", "视角提炼"],
+      knowledge_concepts: [
+        { name: "RAG", aliases: ["Retrieval-Augmented Generation"], relevance: "high", evidence: "模拟卡片包含可复用知识点" }
+      ],
+      concept_relations: [],
       category: meta.category,
       card_type: meta.cardType,
       perspective: meta.perspective,

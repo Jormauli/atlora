@@ -35,3 +35,21 @@ test("content view prompt does not translate card content into a second language
   assert.ok(!prompt.includes("localized_content"));
   assert.ok(!prompt.includes("英文版"));
 });
+
+test("Chinese card prompts request canonical knowledge concepts and controlled relations", () => {
+  for (const file of [
+    "content_view.zh.md",
+    "general_summary.zh.md",
+    "content_creator.zh.md",
+    "startup_product.zh.md",
+    "investment_info.zh.md",
+    "tool_app.zh.md",
+    "learning_note.zh.md"
+  ]) {
+    const prompt = readFileSync(path.join(promptDir, file), "utf8");
+    assert.ok(prompt.includes("knowledge_concepts"), file);
+    assert.ok(prompt.includes("concept_relations"), file);
+    assert.ok(prompt.includes("related_to"), file);
+    assert.ok(prompt.includes("优先复用已有知识点"), file);
+  }
+});

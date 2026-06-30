@@ -1,5 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
+import { prisma } from "@/lib/db/prisma";
 import { aiCardSchema } from "@/lib/validators/card";
 import { getLLMProvider } from "@/lib/providers/llm";
 import { routeModel } from "@/lib/model-router";
@@ -43,6 +44,7 @@ export async function generateCardDraft(input: {
     requiresVision: input.requiresVision
   });
   const prompt = await loadPrompt(input.templateId);
+  const graphContext = await getGraphPromptContext(input.userId);
   const provider = getLLMProvider();
   const output = await provider.generateCard(
     {
@@ -50,7 +52,8 @@ export async function generateCardDraft(input: {
       content: input.content,
       templateId: input.templateId,
       sourceTitle: input.sourceTitle,
-      sourceDomain: input.sourceDomain
+      sourceDomain: input.sourceDomain,
+      graphContext
     },
     route
   );
@@ -113,4 +116,24 @@ function baseTemplate(templateId: string) {
 
 function encodedViewsFromTemplate(templateId: string) {
   return templateId.includes("__") ? templateId.split("__")[1]?.replace(/,/g, "|") : null;
+}
+
+async function getGraphPromptContext(userId: string) {
+  const [tags, concepts] = await Promise.all([
+    prisma.tag.findMany({ where: { userId }, orderBy: { updatedAt: "desc" }, take: 40 }),
+    prisma.knowledgeConcept.findMany({ where: { userId, status: "active" }, orderBy: { updatedAt: "desc" }, take: 80 })
+  ]);
+  return {
+    tags: tags.map((tag) => ({ id: tag.id, name: tag.name, aliases: jsonStringArray(tag.aliases) })),
+    concepts: concepts.map((concept) => ({
+      id: concept.id,
+      name: concept.canonicalName,
+      aliases: jsonStringArray(concept.aliases),
+      description: concept.description
+    }))
+  };
+}
+
+function jsonStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((item) => String(item ?? "").trim()).filter(Boolean) : [];
 }

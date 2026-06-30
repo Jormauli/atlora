@@ -4,11 +4,12 @@ import type { ModelRouteResult } from "@/lib/model-router";
 
 export class OpenAICompatibleProvider implements LLMProvider {
   async generateCard(input: GenerateCardInput, route: ModelRouteResult): Promise<GenerateCardOutput> {
+    const systemPrompt = withGraphContext(input);
     const data = await postChatCompletion(
       {
         model: route.model,
         messages: [
-          { role: "system", content: input.prompt },
+          { role: "system", content: systemPrompt },
           { role: "user", content: input.content }
         ],
         temperature: 0.2,
@@ -20,7 +21,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     const raw = data.choices?.[0]?.message?.content ?? "";
     return {
       raw,
-      inputTokens: data.usage?.prompt_tokens ?? estimateTokens(input.prompt + input.content),
+      inputTokens: data.usage?.prompt_tokens ?? estimateTokens(systemPrompt + input.content),
       outputTokens: data.usage?.completion_tokens ?? estimateTokens(raw)
     };
   }
@@ -41,6 +42,31 @@ export class OpenAICompatibleProvider implements LLMProvider {
     );
     return data.choices?.[0]?.message?.content ?? input;
   }
+}
+
+function withGraphContext(input: GenerateCardInput) {
+  const context = input.graphContext;
+  if (!context || (!context.tags.length && !context.concepts.length)) return input.prompt;
+  const tags = context.tags
+    .map((tag) => `- ${tag.id}: ${tag.name}${tag.aliases.length ? `（别名：${tag.aliases.join("、")}）` : ""}`)
+    .join("\n");
+  const concepts = context.concepts
+    .map((concept) => {
+      const aliases = concept.aliases.length ? `（别名：${concept.aliases.join("、")}）` : "";
+      const description = concept.description ? `：${concept.description}` : "";
+      return `- ${concept.id}: ${concept.name}${aliases}${description}`;
+    })
+    .join("\n");
+  return `${input.prompt}
+
+【已有标签与知识点】
+生成 tags 和 knowledge_concepts 时，优先复用以下已有条目；同一含义不要创造新表达。若复用知识点，可在 knowledge_concepts 中填入对应 id。
+
+已有标签：
+${tags || "- 无"}
+
+已有知识点：
+${concepts || "- 无"}`;
 }
 
 type ChatCompletionBody = {
