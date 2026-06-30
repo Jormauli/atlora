@@ -27,6 +27,8 @@ const cards: DashboardCard[] = [
     sourceUrl: "https://example.com",
     sourceTitle: "原文标题",
     sourceDomain: "example.com",
+    knowledgeConcepts: [],
+    relatedCards: [],
     createdAt: "2026-06-07T00:00:00.000Z",
     updatedAt: "2026-06-07T00:00:00.000Z"
   },
@@ -44,6 +46,8 @@ const cards: DashboardCard[] = [
     sourceUrl: null,
     sourceTitle: null,
     sourceDomain: null,
+    knowledgeConcepts: [],
+    relatedCards: [],
     createdAt: "2026-06-06T00:00:00.000Z",
     updatedAt: "2026-06-06T00:00:00.000Z"
   }
@@ -68,6 +72,8 @@ const cardsWithSecondaryView: DashboardCard[] = [
     sourceUrl: null,
     sourceTitle: null,
     sourceDomain: null,
+    knowledgeConcepts: [],
+    relatedCards: [],
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z"
   }
@@ -184,4 +190,21 @@ test("filterDashboardCards sorts ascending when requested", () => {
   });
 
   assert.deepEqual(filtered.map((card) => card.id), ["card-2", "card-1"]);
+});
+
+test("filterDashboardCards searches knowledge concept names", () => {
+  const filtered = filterDashboardCards([
+    {
+      ...cards[0],
+      knowledgeConcepts: [{ id: "concept-1", name: "RAG", description: null, relevance: "high", evidence: null }],
+      relatedCards: []
+    }
+  ], {
+    query: "rag",
+    selectedRoleIds: ["all"],
+    activeTag: "",
+    sort: "desc"
+  });
+
+  assert.deepEqual(filtered.map((card) => card.id), ["card-1"]);
 });

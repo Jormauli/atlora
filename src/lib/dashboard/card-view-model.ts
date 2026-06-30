@@ -1,4 +1,5 @@
 import { contentViews, fallbackContentView, findContentView } from "@/lib/content-views";
+import type { SerializedKnowledgeConcept, SerializedRelatedCard } from "@/lib/services/knowledge-graph/types";
 import type { LocalizedCardContent } from "@/lib/types";
 
 export interface DashboardCard {
@@ -16,6 +17,8 @@ export interface DashboardCard {
   sourceUrl: string | null;
   sourceTitle: string | null;
   sourceDomain: string | null;
+  knowledgeConcepts: SerializedKnowledgeConcept[];
+  relatedCards: SerializedRelatedCard[];
   createdAt: string;
   updatedAt: string;
 }
@@ -162,7 +165,13 @@ export function filterDashboardCards(cards: DashboardCard[], filters: DashboardC
       if (filters.activeTag && !card.tags.includes(filters.activeTag)) return false;
       if (!keyword) return true;
 
-      return [card.title, card.summary, card.sourceTitle ?? "", card.tags.join(" ")]
+      return [
+        card.title,
+        card.summary,
+        card.sourceTitle ?? "",
+        card.tags.join(" "),
+        card.knowledgeConcepts.map((concept) => concept.name).join(" ")
+      ]
         .join(" ")
         .toLowerCase()
         .includes(keyword);
