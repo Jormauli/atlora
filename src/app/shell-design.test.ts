@@ -28,6 +28,13 @@ test("secondary pages no longer use white cards as the main surface", () => {
   }
 });
 
+test("settings summary cards wait for a wide content column before splitting", () => {
+  const source = readFileSync(path.join(root, "src/components/settings-content.tsx"), "utf8");
+
+  assert.ok(source.includes("lg:grid-cols-2"));
+  assert.ok(!source.includes("md:grid-cols-2"));
+});
+
 test("card editing surfaces stay readable on the dark Atlora shell", () => {
   for (const file of ["src/components/card-editor.tsx", "src/app/cards/[id]/page.tsx"]) {
     const source = readFileSync(path.join(root, file), "utf8");

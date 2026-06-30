@@ -29,7 +29,7 @@ export function SettingsContent({
         <h1 className="mt-1 text-2xl font-semibold">{settingsCopy.title}</h1>
         <p className="mt-1 text-sm text-[#b4b4b1]">{settingsCopy.description}</p>
       </header>
-      <section className="mt-6 grid gap-4 md:grid-cols-2">
+      <section className="mt-6 grid gap-4 lg:grid-cols-2">
         <div className="rounded-md border border-[#2f2f2f] bg-[#171717] p-5 shadow-[0_1px_0_rgba(0,0,0,0.2)]">
           <p className="text-sm text-[#8f8f8a]">{settingsCopy.email}</p>
           <p className="mt-2 break-words text-lg font-medium text-[#f3f3f1]">{email}</p>
