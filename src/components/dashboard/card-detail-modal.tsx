@@ -38,8 +38,12 @@ export function CardDetailModal({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const viewportWidth = typeof window === "undefined" ? 1280 : window.innerWidth;
-  const viewportHeight = typeof window === "undefined" ? 720 : window.innerHeight;
+  const [viewportSize, setViewportSize] = useState(() => ({
+    width: typeof window === "undefined" ? 1280 : window.innerWidth,
+    height: typeof window === "undefined" ? 720 : window.innerHeight
+  }));
+  const viewportWidth = viewportSize.width;
+  const viewportHeight = viewportSize.height;
   const panelWidth = Math.min(768, viewportWidth - 32);
   const panelHeight = Math.min(620, viewportHeight * 0.88 - 32);
   const panelTop = Math.min(Math.max(16, viewportHeight * 0.06), 56);
@@ -75,6 +79,18 @@ export function CardDetailModal({
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
     };
+  }, []);
+
+  useEffect(() => {
+    function updateViewportSize() {
+      setViewportSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    }
+
+    window.addEventListener("resize", updateViewportSize);
+    return () => window.removeEventListener("resize", updateViewportSize);
   }, []);
 
   const panelStyle = {

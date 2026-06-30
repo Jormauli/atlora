@@ -14,6 +14,14 @@ test("card detail modal contains wheel scrolling inside the card panel", () => {
   assert.ok(modalSource.includes("overscroll-contain"));
 });
 
+test("card detail modal recalculates panel geometry when the viewport changes", () => {
+  assert.ok(modalSource.includes("viewportSize"));
+  assert.ok(modalSource.includes("window.addEventListener(\"resize\", updateViewportSize)"));
+  assert.ok(modalSource.includes("window.removeEventListener(\"resize\", updateViewportSize)"));
+  assert.ok(modalSource.includes("width: window.innerWidth"));
+  assert.ok(modalSource.includes("height: window.innerHeight"));
+});
+
 test("card detail modal deletes only after an inline confirmation", () => {
   assert.ok(modalSource.includes("confirmingDelete"));
   assert.ok(modalSource.includes("cardCopy.confirmDelete"));
