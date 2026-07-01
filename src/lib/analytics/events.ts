@@ -66,7 +66,8 @@ export async function captureServerEvent(input: {
     await fetch(`${host.replace(/\/$/, "")}/capture/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(1500)
     });
   } catch (error) {
     console.error("[analytics] capture failed", error);
