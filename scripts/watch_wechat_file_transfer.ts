@@ -66,7 +66,7 @@ export function extractLikelyMessage(ocrText: string) {
     .filter((line) => !line.includes("文件传输助手"))
     .filter((line) => !line.includes("WeChat"));
 
-  const urlLine = lines.find((line) => /https?:\/\//i.test(line));
+  const urlLine = [...lines].reverse().find((line) => /https?:\/\//i.test(line));
   if (urlLine) return urlLine;
   return lines.reverse().find(isLikelyUserMessage) ?? null;
 }

@@ -32,8 +32,8 @@ export async function handlePersonalWeChatMessage(input: PersonalWeChatMessageIn
 }
 
 export function extractFirstUrl(text: string) {
-  const matched = text.match(/https?:\/\/[^\s"'<>，。！？、]+/i);
-  return matched?.[0] ?? null;
+  const matches = Array.from(text.matchAll(/https?:\/\/[^\s"'<>，。！？、]+/gi));
+  return matches.at(-1)?.[0] ?? null;
 }
 
 async function resolvePersonalWeChatUser() {

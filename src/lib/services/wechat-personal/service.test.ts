@@ -9,6 +9,13 @@ test("extractFirstUrl finds the first http url in a WeChat message", () => {
   );
 });
 
+test("extractFirstUrl picks the latest url when forwarded text includes chat history", () => {
+  assert.equal(
+    extractFirstUrl("旧链接 https://mp.weixin.qq.com/s/old-first-link\n新链接 https://mp.weixin.qq.com/s/new-latest-link"),
+    "https://mp.weixin.qq.com/s/new-latest-link"
+  );
+});
+
 test("extractFirstUrl trims common Chinese punctuation after urls", () => {
   assert.equal(extractFirstUrl("链接：https://example.com/a/b，看看"), "https://example.com/a/b");
 });
