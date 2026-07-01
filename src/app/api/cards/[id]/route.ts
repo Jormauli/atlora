@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { captureServerEvent } from "@/lib/analytics/events";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { cardPatchSchema } from "@/lib/validators/card";
@@ -26,6 +27,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     data
   });
   if (!card.count) return NextResponse.json({ error: "未找到" }, { status: 404 });
+  await captureServerEvent({ userId: user.id, event: "card_saved" });
   return NextResponse.json({ ok: true });
 }
 

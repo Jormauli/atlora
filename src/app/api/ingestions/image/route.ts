@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { captureServerEvent } from "@/lib/analytics/events";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ingestImage } from "@/lib/services/ingestion/service";
 import { detectSupportedImageMimeType, getImageIngestionErrorMessage } from "@/lib/services/image-upload/validation";
@@ -21,6 +22,11 @@ export async function POST(request: Request) {
     if (!mimeType) {
       return NextResponse.json({ error: "图片内容不合法，请重新选择 jpg / jpeg / png / webp 图片。" }, { status: 400 });
     }
+    await captureServerEvent({
+      userId: user.id,
+      event: "material_submitted",
+      properties: { sourceType: "image", templateId }
+    });
     const card = await ingestImage({
       userId: user.id,
       file: {
@@ -32,6 +38,11 @@ export async function POST(request: Request) {
       },
       templateId,
       defaultPerspective: user.profile?.defaultPerspective
+    });
+    await captureServerEvent({
+      userId: user.id,
+      event: "card_generated",
+      properties: { sourceType: "image", templateId: card.aiTemplateId ?? "unknown", status: "completed" }
     });
     return NextResponse.json({ card });
   } catch (error) {

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { captureServerEvent } from "@/lib/analytics/events";
 import { prisma } from "@/lib/db/prisma";
 import { createSession } from "@/lib/auth/session";
 import { registerSchema } from "@/lib/validators/auth";
@@ -17,5 +18,6 @@ export async function POST(request: Request) {
     }
   });
   await createSession(user.id);
+  await captureServerEvent({ userId: user.id, event: "user_registered" });
   return NextResponse.json({ user: { id: user.id, email: user.email } });
 }

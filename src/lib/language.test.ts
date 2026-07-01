@@ -24,6 +24,15 @@ test("language copy supports global Chinese and English UI labels", async () => 
   assert.equal(localizedContentViewLabel("custom-view", uiCopy.en), "custom-view");
 });
 
+test("card concept editing copy exists in both languages", async () => {
+  const { uiCopy } = await import("./language");
+
+  assert.equal(uiCopy.zh.card.addKnowledgeConcept, "添加知识点");
+  assert.equal(uiCopy.en.card.addKnowledgeConcept, "Add concept");
+  assert.ok(uiCopy.zh.card.removeKnowledgeConcept);
+  assert.ok(uiCopy.en.card.removeKnowledgeConcept);
+});
+
 test("app shells expose the shared global language switcher", () => {
   const layout = readFileSync(path.join(root, "src/app/layout.tsx"), "utf8");
   const serverShell = readFileSync(path.join(root, "src/components/app-shell.tsx"), "utf8");

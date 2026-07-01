@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { captureServerEvent } from "@/lib/analytics/events";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
@@ -10,5 +11,6 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
     data: { status: "saved" }
   });
   if (!result.count) return NextResponse.json({ error: "未找到草稿" }, { status: 404 });
+  await captureServerEvent({ userId: user.id, event: "card_saved" });
   return NextResponse.json({ ok: true });
 }

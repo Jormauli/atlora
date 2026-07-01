@@ -74,6 +74,66 @@ export async function persistCardKnowledgeGraph(input: {
   }
 }
 
+export class ManualConceptError extends Error {
+  constructor(public code: "CARD_NOT_FOUND" | "INVALID_CONCEPT_NAME", message = code) {
+    super(message);
+  }
+}
+
+export async function addManualCardConcept(input: { userId: string; cardId: string; name: string }) {
+  const name = input.name.trim().replace(/\s+/g, " ");
+  if (!name || name.length > 80) throw new ManualConceptError("INVALID_CONCEPT_NAME");
+
+  await assertWritableCard(input.userId, input.cardId);
+  const conceptMap = await upsertConcepts(input.userId, [{ name, relevance: "medium" }]);
+  const concept = conceptMap.get(name);
+  if (!concept) throw new ManualConceptError("INVALID_CONCEPT_NAME");
+
+  await prisma.cardConcept.upsert({
+    where: { cardId_conceptId: { cardId: input.cardId, conceptId: concept.id } },
+    update: { relevance: "medium", evidence: null, source: "user" },
+    create: { cardId: input.cardId, conceptId: concept.id, relevance: "medium", evidence: null, source: "user" }
+  });
+
+  return listCardKnowledgeConcepts(input.userId, input.cardId);
+}
+
+export async function removeManualCardConcept(input: { userId: string; cardId: string; conceptId: string }) {
+  await assertWritableCard(input.userId, input.cardId);
+
+  await prisma.cardConcept.deleteMany({
+    where: {
+      cardId: input.cardId,
+      conceptId: input.conceptId,
+      card: { userId: input.userId, status: { not: "deleted" } },
+      concept: { userId: input.userId }
+    }
+  });
+
+  return listCardKnowledgeConcepts(input.userId, input.cardId);
+}
+
+export async function listCardKnowledgeConcepts(userId: string, cardId: string) {
+  const card = await prisma.card.findFirst({
+    where: { id: cardId, userId, status: { not: "deleted" } },
+    include: {
+      cardConcepts: {
+        include: { concept: true },
+        orderBy: { concept: { canonicalName: "asc" } }
+      }
+    }
+  });
+  if (!card) throw new ManualConceptError("CARD_NOT_FOUND");
+
+  return card.cardConcepts.map((item) => ({
+    id: item.concept.id,
+    name: item.concept.canonicalName,
+    description: item.concept.description,
+    relevance: item.relevance,
+    evidence: item.evidence
+  }));
+}
+
 async function upsertTags(userId: string, names: string[]) {
   const existing = await prisma.tag.findMany({ where: { userId } });
   const matchInput = existing.map((tag) => ({
@@ -132,6 +192,14 @@ async function upsertConcepts(userId: string, candidates: KnowledgeConceptCandid
 
 function clampConfidence(value: number | undefined) {
   return Math.max(0, Math.min(1, value ?? 0.7));
+}
+
+async function assertWritableCard(userId: string, cardId: string) {
+  const card = await prisma.card.findFirst({
+    where: { id: cardId, userId, status: { not: "deleted" } },
+    select: { id: true }
+  });
+  if (!card) throw new ManualConceptError("CARD_NOT_FOUND");
 }
 
 function jsonStringArray(value: unknown): string[] {
