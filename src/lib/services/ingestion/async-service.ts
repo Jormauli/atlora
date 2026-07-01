@@ -44,7 +44,7 @@ export async function completeWorkerExtraction(ingestionId: string, extracted: W
     const result = await tx.ingestionItem.updateMany({
       where: {
         id: ingestionId,
-        stage: { in: ["extracting_text", "recognizing_text"] },
+        stage: { in: ["queued", "opening_article", "extracting_text", "recognizing_text"] },
         status: { in: ["received", "processing"] }
       },
       data: { stage: "generating_card", status: "processing" }

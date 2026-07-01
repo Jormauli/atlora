@@ -16,9 +16,18 @@ test("WeChat ingestion is gated by WECHAT_INGESTION_ENABLED feature flag", async
   assert.match(source, /WECHAT_INGESTION_ENABLED/);
 });
 
-test("WeChat direct extraction still returns an ingestion id for progress polling", async () => {
+test("WeChat async ingestion returns an ingestion id for progress polling", async () => {
   const source = await readFile(new URL("./route.ts", import.meta.url), "utf8");
   const wechatBranch = source.slice(source.indexOf("const templateId = resolveTemplate"));
   assert.doesNotMatch(wechatBranch, /return NextResponse\.json\(\{\s*card\s*\}\);/);
   assert.match(wechatBranch, /return NextResponse\.json\(\{\s*ingestionId:\s*ingestion\.id\s*\}/);
+});
+
+test("WeChat ingestion does not run card generation inside the user request", async () => {
+  const source = await readFile(new URL("./route.ts", import.meta.url), "utf8");
+  assert.match(source, /export const maxDuration = 60/);
+  assert.doesNotMatch(source, /tryHtmlExtraction/);
+  assert.doesNotMatch(source, /generateCardDraft/);
+  assert.doesNotMatch(source, /createDraftCard/);
+  assert.match(source, /enqueueWeChat/);
 });

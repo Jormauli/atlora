@@ -40,6 +40,68 @@ test("OpenAICompatibleProvider passes output limits and an abort signal", async 
   }
 });
 
+test("OpenAICompatibleProvider allows graph-enriched card generation more than 20 seconds", async () => {
+  process.env.LLM_BASE_URL = "https://llm.example.test";
+  process.env.LLM_API_KEY = "test-key";
+  const originalFetch = globalThis.fetch;
+  const originalTimeout = AbortSignal.timeout;
+  let timeoutMs = 0;
+  AbortSignal.timeout = ((milliseconds: number) => {
+    timeoutMs = milliseconds;
+    return originalTimeout(milliseconds);
+  }) as typeof AbortSignal.timeout;
+  globalThis.fetch = (async () => {
+    return jsonResponse({
+      choices: [{ message: { content: '{"title":"Card"}' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 5 }
+    });
+  }) as typeof fetch;
+
+  try {
+    await new OpenAICompatibleProvider().generateCard(
+      { prompt: "prompt", content: "content", templateId: "general_summary" },
+      route
+    );
+
+    assert.equal(timeoutMs, 45000);
+  } finally {
+    AbortSignal.timeout = originalTimeout;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("OpenAICompatibleProvider lets production override the LLM request timeout", async () => {
+  process.env.LLM_BASE_URL = "https://llm.example.test";
+  process.env.LLM_API_KEY = "test-key";
+  process.env.LLM_REQUEST_TIMEOUT_MS = "52000";
+  const originalFetch = globalThis.fetch;
+  const originalTimeout = AbortSignal.timeout;
+  let timeoutMs = 0;
+  AbortSignal.timeout = ((milliseconds: number) => {
+    timeoutMs = milliseconds;
+    return originalTimeout(milliseconds);
+  }) as typeof AbortSignal.timeout;
+  globalThis.fetch = (async () => {
+    return jsonResponse({
+      choices: [{ message: { content: '{"title":"Card"}' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 5 }
+    });
+  }) as typeof fetch;
+
+  try {
+    await new OpenAICompatibleProvider().generateCard(
+      { prompt: "prompt", content: "content", templateId: "general_summary" },
+      route
+    );
+
+    assert.equal(timeoutMs, 52000);
+  } finally {
+    delete process.env.LLM_REQUEST_TIMEOUT_MS;
+    AbortSignal.timeout = originalTimeout;
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("OpenAICompatibleProvider returns finish reason for truncation diagnostics", async () => {
   process.env.LLM_BASE_URL = "https://llm.example.test";
   process.env.LLM_API_KEY = "test-key";

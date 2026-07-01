@@ -4,10 +4,9 @@ import { linkIngestionSchema } from "@/lib/validators/ingestion";
 import { ingestLink, resolveTemplate } from "@/lib/services/ingestion/service";
 import { getTaskQueue } from "@/lib/services/task-queue";
 import { prisma } from "@/lib/db/prisma";
-import { isWeChatArticleUrl, tryHtmlExtraction } from "@/lib/services/link-fetcher/wechat";
-import { generateCardDraft } from "@/lib/services/ai-orchestration/service";
-import { createDraftCard } from "@/lib/services/card/service";
-import { recordUsage } from "@/lib/services/usage/service";
+import { isWeChatArticleUrl } from "@/lib/services/link-fetcher/wechat";
+
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -36,74 +35,9 @@ export async function POST(request: Request) {
       sourceType: "link",
       rawUrl: parsed.data.url,
       templateId,
-      status: "processing",
-      stage: "extracting_text"
+      status: "received",
+      stage: "queued"
     }
-  });
-  const html = await tryHtmlExtraction(parsed.data.url);
-  if (html) {
-    try {
-      await prisma.ingestionItem.update({
-        where: { id: ingestion.id },
-        data: { status: "processing", stage: "generating_card" }
-      });
-      const generated = await generateCardDraft({
-        userId: user.id,
-        content: [html.title, html.text].filter(Boolean).join("\n"),
-        templateId,
-        sourceType: "link",
-        sourceTitle: html.title,
-        sourceDomain: new URL(parsed.data.url).hostname
-      });
-      await recordUsage({
-        userId: user.id,
-        usageType: "link_fetch",
-        taskType: "basic_summary",
-        quantity: 1,
-        unit: "url",
-        relatedId: ingestion.id
-      });
-      await prisma.processingResult.create({
-        data: {
-          ingestionItemId: ingestion.id,
-          normalizedText: html.text,
-          extractedTitle: html.title,
-          detectedContentType: "wechat_markdown",
-          sourceMetadata: { strategy: "wechat_html", domain: new URL(parsed.data.url).hostname }
-        }
-      });
-      const card = await createDraftCard({
-        userId: user.id,
-        ingestionItemId: ingestion.id,
-        generated,
-        sourceType: "link",
-        sourceUrl: parsed.data.url,
-        templateId
-      });
-      await prisma.ingestionItem.update({
-        where: { id: ingestion.id },
-        data: { status: "processed", stage: "completed", processingCompletedAt: new Date() }
-      });
-      return NextResponse.json({ ingestionId: ingestion.id });
-    } catch (error) {
-      console.error(error);
-      await prisma.ingestionItem.update({
-        where: { id: ingestion.id },
-        data: {
-          status: "failed",
-          stage: "failed",
-          failureCode: "CARD_GENERATION_FAILED",
-          errorMessage: "正文已识别，但知识卡片生成失败，请稍后重试。",
-          processingCompletedAt: new Date()
-        }
-      });
-      return NextResponse.json({ error: "正文已识别，但知识卡片生成失败，请稍后重试。" }, { status: 500 });
-    }
-  }
-
-  await prisma.ingestionItem.update({
-    where: { id: ingestion.id },
-    data: { status: "received", stage: "queued" }
   });
   try {
     await getTaskQueue().enqueueWeChat({

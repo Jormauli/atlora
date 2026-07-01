@@ -78,7 +78,7 @@ type ChatCompletionBody = {
   response_format: { type: "json_object" };
 };
 
-const llmRequestTimeoutMs = 20000;
+const defaultLlmRequestTimeoutMs = 45000;
 
 async function postChatCompletion(body: ChatCompletionBody, errorMessage: string) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -89,13 +89,18 @@ async function postChatCompletion(body: ChatCompletionBody, errorMessage: string
         Authorization: `Bearer ${process.env.LLM_API_KEY}`
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(llmRequestTimeoutMs)
+      signal: AbortSignal.timeout(llmRequestTimeoutMs())
     });
     if (response.ok) return response.json();
     if (response.status < 500 || attempt === 1) throw new Error(errorMessage);
     await delay(150 * (attempt + 1));
   }
   throw new Error(errorMessage);
+}
+
+function llmRequestTimeoutMs() {
+  const configured = Number(process.env.LLM_REQUEST_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured > 0 ? configured : defaultLlmRequestTimeoutMs;
 }
 
 function delay(milliseconds: number) {

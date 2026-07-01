@@ -18,6 +18,6 @@ test("extracted callbacks are claimed atomically before card generation", async 
     "utf8"
   );
   assert.match(source, /\$transaction/);
-  assert.match(source, /stage:\s*\{\s*in:\s*\["extracting_text",\s*"recognizing_text"\]/);
+  assert.match(source, /stage:\s*\{\s*in:\s*\["queued",\s*"opening_article",\s*"extracting_text",\s*"recognizing_text"\]/);
   assert.match(source, /ingestionItemId:\s*ingestionId/);
 });
