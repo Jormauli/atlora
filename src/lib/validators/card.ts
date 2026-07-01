@@ -46,7 +46,8 @@ const aliasesSchema = z.preprocess((value) => {
   return value.map((item) => String(item ?? "").trim()).filter(Boolean);
 }, z.array(z.string()).default([]));
 
-const conceptRelevanceSchema = z.enum(["high", "medium", "low"]).default("medium");
+const conceptRelevanceValues = ["high", "medium", "low"] as const;
+const conceptRelevanceSchema = z.enum(conceptRelevanceValues).default("medium");
 
 const knowledgeConceptCandidateSchema = z.object({
   id: z.string().trim().optional(),
@@ -66,6 +67,40 @@ const conceptRelationCandidateSchema = z.object({
   confidence: z.number().min(0).max(1).default(0.7)
 });
 
+const forgivingKnowledgeConceptsSchema = z.preprocess((value) => {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const candidate = item as Record<string, unknown>;
+    const relevance = conceptRelevanceValues.includes(candidate.relevance as typeof conceptRelevanceValues[number])
+      ? candidate.relevance
+      : "medium";
+    const parsed = knowledgeConceptCandidateSchema.safeParse({
+      ...candidate,
+      relevance
+    });
+    return parsed.success ? [parsed.data] : [];
+  });
+}, z.array(knowledgeConceptCandidateSchema).default([]));
+
+const relationTypeSet = new Set<string>(conceptRelationTypes);
+const forgivingConceptRelationsSchema = z.preprocess((value) => {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const candidate = item as Record<string, unknown>;
+    const relationType = relationTypeSet.has(String(candidate.relation_type))
+      ? candidate.relation_type
+      : "related_to";
+    const parsed = conceptRelationCandidateSchema.safeParse({
+      ...candidate,
+      relation_type: relationType,
+      confidence: candidate.confidence === undefined ? undefined : Number(candidate.confidence)
+    });
+    return parsed.success ? [parsed.data] : [];
+  });
+}, z.array(conceptRelationCandidateSchema).default([]));
+
 export const aiCardSchema = z.object({
   title: z.string().min(1),
   summary: z.string().min(1),
@@ -84,8 +119,8 @@ export const aiCardSchema = z.object({
   perspective: z.string().default("general"),
   source_title: z.string().nullable().optional(),
   source_domain: z.string().nullable().optional(),
-  knowledge_concepts: z.array(knowledgeConceptCandidateSchema).default([]),
-  concept_relations: z.array(conceptRelationCandidateSchema).default([])
+  knowledge_concepts: forgivingKnowledgeConceptsSchema,
+  concept_relations: forgivingConceptRelationsSchema
 });
 
 export const cardPatchSchema = z.object({

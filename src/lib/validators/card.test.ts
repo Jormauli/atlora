@@ -83,19 +83,30 @@ test("aiCardSchema accepts knowledge concepts and concept relations", () => {
   assert.equal(parsed.concept_relations[0].relation_type, "solves");
 });
 
-test("aiCardSchema rejects unsupported concept relation types", () => {
-  assert.throws(
-    () => aiCardSchema.parse({
-      title: "坏关系",
-      summary: "关系类型不在白名单。",
-      key_points: ["观点：关系要受控"],
-      tags: ["AI"],
-      category: "摘要",
-      card_type: "general_summary",
-      perspective: "general",
-      knowledge_concepts: [{ name: "RAG" }],
-      concept_relations: [{ source: "RAG", relation_type: "invented_relation", target: "Agent" }]
-    }),
-    /Invalid enum value|invalid enum value/i
-  );
+test("aiCardSchema keeps valid cards when graph candidates are imperfect", () => {
+  const parsed = aiCardSchema.parse({
+    title: "关系容错",
+    summary: "图谱字段不能阻断主卡片生成。",
+    key_points: ["观点：卡片生成优先于图谱增强"],
+    tags: ["AI"],
+    category: "摘要",
+    card_type: "general_summary",
+    perspective: "general",
+    knowledge_concepts: [
+      { name: "RAG", relevance: "very_high" },
+      { aliases: ["缺少名称"] },
+      "不是对象"
+    ],
+    concept_relations: [
+      { source: "RAG", relation_type: "invented_relation", target: "Agent", confidence: "0.8" },
+      { source: "RAG", relation_type: "solves" }
+    ]
+  });
+
+  assert.equal(parsed.knowledge_concepts.length, 1);
+  assert.equal(parsed.knowledge_concepts[0].name, "RAG");
+  assert.equal(parsed.knowledge_concepts[0].relevance, "medium");
+  assert.equal(parsed.concept_relations.length, 1);
+  assert.equal(parsed.concept_relations[0].relation_type, "related_to");
+  assert.equal(parsed.concept_relations[0].confidence, 0.8);
 });
