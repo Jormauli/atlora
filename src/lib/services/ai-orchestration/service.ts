@@ -91,6 +91,9 @@ export async function generateCardDraft(input: {
     console.warn("AI card output failed schema validation", {
       templateId: input.templateId,
       sourceType: input.sourceType,
+      finishReason: output.finishReason ?? null,
+      rawLength: output.raw.length,
+      outputTokens: output.outputTokens,
       outputShape: describeOutputShape(parsedOutput),
       issues: parsed.error.issues.map((issue) => ({
         path: issue.path.join("."),

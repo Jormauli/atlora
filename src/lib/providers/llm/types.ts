@@ -18,6 +18,7 @@ export interface GenerateCardOutput {
   raw: string;
   inputTokens: number;
   outputTokens: number;
+  finishReason?: string | null;
 }
 
 export interface LLMProvider {

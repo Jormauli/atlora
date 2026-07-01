@@ -40,6 +40,29 @@ test("OpenAICompatibleProvider passes output limits and an abort signal", async 
   }
 });
 
+test("OpenAICompatibleProvider returns finish reason for truncation diagnostics", async () => {
+  process.env.LLM_BASE_URL = "https://llm.example.test";
+  process.env.LLM_API_KEY = "test-key";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    return jsonResponse({
+      choices: [{ finish_reason: "length", message: { content: "{\"title\":\"Card\"" } }],
+      usage: { prompt_tokens: 10, completion_tokens: 321 }
+    });
+  }) as typeof fetch;
+
+  try {
+    const output = await new OpenAICompatibleProvider().generateCard(
+      { prompt: "prompt", content: "content", templateId: "general_summary" },
+      route
+    );
+
+    assert.equal(output.finishReason, "length");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("OpenAICompatibleProvider retries one transient server error", async () => {
   process.env.LLM_BASE_URL = "https://llm.example.test";
   process.env.LLM_API_KEY = "test-key";

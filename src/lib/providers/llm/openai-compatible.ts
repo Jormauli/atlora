@@ -22,7 +22,8 @@ export class OpenAICompatibleProvider implements LLMProvider {
     return {
       raw,
       inputTokens: data.usage?.prompt_tokens ?? estimateTokens(systemPrompt + input.content),
-      outputTokens: data.usage?.completion_tokens ?? estimateTokens(raw)
+      outputTokens: data.usage?.completion_tokens ?? estimateTokens(raw),
+      finishReason: data.choices?.[0]?.finish_reason ?? null
     };
   }
 
