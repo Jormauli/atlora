@@ -73,6 +73,29 @@ test("aiCardSchema accepts wrapped camelCase model output", () => {
   assert.equal(parsed.source_title, "原文标题");
 });
 
+test("aiCardSchema accepts array and named card wrappers", () => {
+  const parsedFromArray = aiCardSchema.parse({
+    cards: [{
+      title: "数组包裹",
+      summary: "模型有时会把卡片放在 cards 数组。",
+      key_points: ["观点：取第一张卡片｜论据：当前接口只生成一张卡"],
+      tags: ["#通用内容"]
+    }]
+  });
+  const parsedFromNamedWrapper = aiCardSchema.parse({
+    知识卡片: {
+      标题: "命名包裹",
+      摘要: "模型有时会使用中文对象名包裹卡片。",
+      核心要点: ["观点：中文包裹也要解开｜论据：线上日志显示标题摘要仍缺失"],
+      标签: ["#知识点"]
+    }
+  });
+
+  assert.equal(parsedFromArray.title, "数组包裹");
+  assert.equal(parsedFromNamedWrapper.title, "命名包裹");
+  assert.deepEqual(parsedFromNamedWrapper.key_points, ["观点：中文包裹也要解开｜论据：线上日志显示标题摘要仍缺失"]);
+});
+
 test("aiCardSchema accepts common Chinese field names", () => {
   const parsed = aiCardSchema.parse({
     标题: "中文字段输出",

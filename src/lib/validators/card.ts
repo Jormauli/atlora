@@ -125,7 +125,11 @@ const aiCardObjectSchema = z.object({
 
 export const aiCardSchema = z.preprocess(normalizeAiCardPayload, aiCardObjectSchema);
 
-function normalizeAiCardPayload(value: unknown) {
+function normalizeAiCardPayload(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    const firstObject = value.find((item) => item && typeof item === "object" && !Array.isArray(item));
+    return firstObject ? normalizeAiCardPayload(firstObject) : value;
+  }
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
   const input = unwrapCardPayload(value as Record<string, unknown>);
   return {
@@ -153,13 +157,34 @@ function normalizeAiCardPayload(value: unknown) {
 }
 
 function unwrapCardPayload(input: Record<string, unknown>) {
-  for (const key of ["card", "data", "result", "output"]) {
+  for (const key of ["card", "data", "result", "output", "cards", "cardList", "卡片", "知识卡片", "信息卡片", "输出", "结果"]) {
     const value = input[key];
+    if (Array.isArray(value)) {
+      const firstObject = value.find((item) => item && typeof item === "object" && !Array.isArray(item));
+      if (firstObject) return firstObject as Record<string, unknown>;
+    }
     if (value && typeof value === "object" && !Array.isArray(value)) {
       return value as Record<string, unknown>;
     }
   }
+  if (!hasRecognizedCardField(input)) {
+    const objectValues = Object.values(input).filter((value) => value && typeof value === "object" && !Array.isArray(value)) as Record<string, unknown>[];
+    if (objectValues.length === 1) return objectValues[0];
+  }
   return input;
+}
+
+function hasRecognizedCardField(input: Record<string, unknown>) {
+  return [
+    "title",
+    "标题",
+    "summary",
+    "摘要",
+    "key_points",
+    "keyPoints",
+    "核心观点",
+    "核心要点"
+  ].some((key) => input[key] !== undefined);
 }
 
 function pick(input: Record<string, unknown>, keys: string[]) {

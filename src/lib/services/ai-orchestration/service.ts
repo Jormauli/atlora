@@ -87,9 +87,11 @@ export async function generateCardDraft(input: {
   }
 
   if (!parsed.success) {
+    const parsedOutput = safeJson(output.raw);
     console.warn("AI card output failed schema validation", {
       templateId: input.templateId,
       sourceType: input.sourceType,
+      outputShape: describeOutputShape(parsedOutput),
       issues: parsed.error.issues.map((issue) => ({
         path: issue.path.join("."),
         code: issue.code,
@@ -114,6 +116,27 @@ function safeJson(input: string) {
       return null;
     }
   }
+}
+
+function describeOutputShape(value: unknown) {
+  if (!value || typeof value !== "object") return { type: value === null ? "null" : typeof value };
+  if (Array.isArray(value)) return { type: "array", length: value.length };
+  const record = value as Record<string, unknown>;
+  return {
+    type: "object",
+    keys: Object.keys(record).slice(0, 20),
+    nestedObjectKeys: Object.fromEntries(
+      Object.entries(record)
+        .filter(([, nested]) => nested && typeof nested === "object")
+        .slice(0, 5)
+        .map(([key, nested]) => [
+          key,
+          Array.isArray(nested)
+            ? [`array(${nested.length})`]
+            : Object.keys(nested as Record<string, unknown>).slice(0, 20)
+        ])
+    )
+  };
 }
 
 function baseTemplate(templateId: string) {
