@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { captureServerEvent } from "@/lib/analytics/events";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ManualConceptError, removeManualCardConcept } from "@/lib/services/knowledge-graph/service";
 
@@ -8,6 +9,11 @@ export async function DELETE(_: Request, { params }: { params: { id: string; con
 
   try {
     const concepts = await removeManualCardConcept({ userId: user.id, cardId: params.id, conceptId: params.conceptId });
+    await captureServerEvent({
+      userId: user.id,
+      event: "knowledge_concept_removed",
+      properties: { conceptSource: "user" }
+    });
     return NextResponse.json({ concepts });
   } catch (error) {
     if (error instanceof ManualConceptError) {

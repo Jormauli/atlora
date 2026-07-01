@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { captureServerEvent, domainFromUrl } from "@/lib/analytics/events";
 import { getCurrentUser } from "@/lib/auth/session";
 import { linkIngestionSchema } from "@/lib/validators/ingestion";
 import { ingestLink, resolveTemplate } from "@/lib/services/ingestion/service";
@@ -13,6 +14,13 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
   const parsed = linkIngestionSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "请输入有效链接" }, { status: 400 });
+  const domain = domainFromUrl(parsed.data.url);
+  const submittedTemplateId = parsed.data.templateId ?? "auto";
+  await captureServerEvent({
+    userId: user.id,
+    event: "material_submitted",
+    properties: { sourceType: "link", templateId: submittedTemplateId, domain }
+  });
   const wechatAsyncEnabled = process.env.WECHAT_INGESTION_ENABLED === "true";
   if (!isWeChatArticleUrl(parsed.data.url) || !wechatAsyncEnabled) {
     try {
@@ -22,9 +30,19 @@ export async function POST(request: Request) {
         templateId: parsed.data.templateId,
         defaultPerspective: user.profile?.defaultPerspective
       });
+      await captureServerEvent({
+        userId: user.id,
+        event: "card_generated",
+        properties: { sourceType: "link", templateId: card.aiTemplateId ?? "unknown", status: "completed", domain }
+      });
       return NextResponse.json({ card });
     } catch (error) {
       console.error(error);
+      await captureServerEvent({
+        userId: user.id,
+        event: "link_ingestion_failed",
+        properties: { sourceType: "link", templateId: submittedTemplateId, domain, status: "failed", failureCode: "SYNC_LINK_FAILED", stage: "failed" }
+      });
       return NextResponse.json({ error: "生成失败，请稍后重试。" }, { status: 500 });
     }
   }
@@ -38,6 +56,11 @@ export async function POST(request: Request) {
       status: "received",
       stage: "queued"
     }
+  });
+  await captureServerEvent({
+    userId: user.id,
+    event: "link_ingestion_started",
+    properties: { sourceType: "link", templateId, domain, status: "received", stage: "queued" }
   });
   const html = await tryHtmlExtraction(parsed.data.url);
   if (html) {
@@ -72,6 +95,11 @@ export async function POST(request: Request) {
           processingCompletedAt: new Date()
         }
       });
+      await captureServerEvent({
+        userId: user.id,
+        event: "link_ingestion_failed",
+        properties: { sourceType: "link", templateId, domain, status: "failed", failureCode: "QUEUE_UNAVAILABLE", stage: "failed" }
+      });
       return NextResponse.json({ error: "正文已识别，但生成任务提交失败，请稍后重试。" }, { status: 500 });
     }
   }
@@ -93,6 +121,11 @@ export async function POST(request: Request) {
         errorMessage: "链接处理服务暂时不可用，请稍后重试。",
         processingCompletedAt: new Date()
       }
+    });
+    await captureServerEvent({
+      userId: user.id,
+      event: "link_ingestion_failed",
+      properties: { sourceType: "link", templateId, domain, status: "failed", failureCode: "QUEUE_UNAVAILABLE", stage: "failed" }
     });
     return NextResponse.json(
       {

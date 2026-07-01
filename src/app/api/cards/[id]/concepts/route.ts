@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { captureServerEvent } from "@/lib/analytics/events";
 import { getCurrentUser } from "@/lib/auth/session";
 import { addManualCardConcept, ManualConceptError } from "@/lib/services/knowledge-graph/service";
 
@@ -18,6 +19,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   try {
     const concepts = await addManualCardConcept({ userId: user.id, cardId: params.id, name: parsed.data.name });
+    await captureServerEvent({
+      userId: user.id,
+      event: "knowledge_concept_added",
+      properties: { conceptSource: "user" }
+    });
     return NextResponse.json({ concepts });
   } catch (error) {
     if (error instanceof ManualConceptError) {
