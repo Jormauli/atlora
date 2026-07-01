@@ -87,9 +87,15 @@ export async function generateCardDraft(input: {
   }
 
   if (!parsed.success) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("AI card output failed schema validation", parsed.error.flatten());
-    }
+    console.warn("AI card output failed schema validation", {
+      templateId: input.templateId,
+      sourceType: input.sourceType,
+      issues: parsed.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        code: issue.code,
+        message: issue.message
+      }))
+    });
     throw new Error("AI_CARD_SCHEMA_INVALID");
   }
 

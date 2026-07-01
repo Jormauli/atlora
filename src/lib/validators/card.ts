@@ -101,7 +101,7 @@ const forgivingConceptRelationsSchema = z.preprocess((value) => {
   });
 }, z.array(conceptRelationCandidateSchema).default([]));
 
-export const aiCardSchema = z.object({
+const aiCardObjectSchema = z.object({
   title: z.string().min(1),
   summary: z.string().min(1),
   key_points: stringListSchema,
@@ -122,6 +122,52 @@ export const aiCardSchema = z.object({
   knowledge_concepts: forgivingKnowledgeConceptsSchema,
   concept_relations: forgivingConceptRelationsSchema
 });
+
+export const aiCardSchema = z.preprocess(normalizeAiCardPayload, aiCardObjectSchema);
+
+function normalizeAiCardPayload(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const input = unwrapCardPayload(value as Record<string, unknown>);
+  return {
+    ...input,
+    title: pick(input, ["title", "标题"]),
+    summary: pick(input, ["summary", "摘要", "总结"]),
+    key_points: pick(input, ["key_points", "keyPoints", "核心观点", "核心观点与论据", "要点", "核心要点"]),
+    action_items: pick(input, ["action_items", "actionItems", "行动项", "行动建议", "可执行动作"]),
+    framework_structure: pick(input, ["framework_structure", "frameworkStructure", "结构框架"]),
+    critical_evidence: pick(input, ["critical_evidence", "criticalEvidence", "关键证据"]),
+    reusable_insights: pick(input, ["reusable_insights", "reusableInsights", "可复用洞察"]),
+    used_models: pick(input, ["used_models", "usedModels", "使用模型"]),
+    connections: pick(input, ["connections", "关联", "连接"]),
+    role_perspectives: pick(input, ["role_perspectives", "rolePerspectives", "视角提炼", "角色视角"]),
+    localized_content: pick(input, ["localized_content", "localizedContent", "本地化内容"]),
+    tags: pick(input, ["tags", "标签"]),
+    category: pick(input, ["category", "分类"]),
+    card_type: pick(input, ["card_type", "cardType", "卡片类型"]),
+    perspective: pick(input, ["perspective", "视角"]),
+    source_title: pick(input, ["source_title", "sourceTitle", "原文标题", "来源标题"]),
+    source_domain: pick(input, ["source_domain", "sourceDomain", "来源域名"]),
+    knowledge_concepts: pick(input, ["knowledge_concepts", "knowledgeConcepts", "知识点"]),
+    concept_relations: pick(input, ["concept_relations", "conceptRelations", "知识点关系", "概念关系"])
+  };
+}
+
+function unwrapCardPayload(input: Record<string, unknown>) {
+  for (const key of ["card", "data", "result", "output"]) {
+    const value = input[key];
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value as Record<string, unknown>;
+    }
+  }
+  return input;
+}
+
+function pick(input: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    if (input[key] !== undefined) return input[key];
+  }
+  return undefined;
+}
 
 export const cardPatchSchema = z.object({
   title: z.string().min(1).optional(),
