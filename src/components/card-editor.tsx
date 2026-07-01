@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLanguage } from "@/components/language-provider";
@@ -21,6 +22,12 @@ export function CardEditor({ card, draft = false }: { card: SerializableCard; dr
     tags: card.tags.join(", "),
     category: card.category
   });
+  const [concepts, setConcepts] = useState(card.knowledgeConcepts ?? []);
+  const [conceptInput, setConceptInput] = useState("");
+  const [conceptError, setConceptError] = useState("");
+  const [isAddingConcept, setIsAddingConcept] = useState(false);
+  const [removingConceptId, setRemovingConceptId] = useState<string | null>(null);
+
   async function save() {
     await fetch(`/api/cards/${card.id}`, {
       method: "PATCH",
@@ -45,6 +52,45 @@ export function CardEditor({ card, draft = false }: { card: SerializableCard; dr
     await fetch(`/api/cards/${card.id}`, { method: "DELETE" });
     router.push("/dashboard");
   }
+  async function addConcept() {
+    const name = conceptInput.trim();
+    if (!name || isAddingConcept) return;
+    setConceptError("");
+    setIsAddingConcept(true);
+    try {
+      const response = await fetch(`/api/cards/${card.id}/concepts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error ?? cardCopy.knowledgeConceptAddFailed);
+      setConcepts(body.concepts ?? []);
+      setConceptInput("");
+      router.refresh();
+    } catch {
+      setConceptError(cardCopy.knowledgeConceptAddFailed);
+    } finally {
+      setIsAddingConcept(false);
+    }
+  }
+  async function removeConcept(conceptId: string) {
+    if (removingConceptId) return;
+    setConceptError("");
+    setRemovingConceptId(conceptId);
+    try {
+      const response = await fetch(`/api/cards/${card.id}/concepts/${conceptId}`, { method: "DELETE" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error ?? cardCopy.knowledgeConceptRemoveFailed);
+      setConcepts(body.concepts ?? []);
+      router.refresh();
+    } catch {
+      setConceptError(cardCopy.knowledgeConceptRemoveFailed);
+    } finally {
+      setRemovingConceptId(null);
+    }
+  }
+
   return (
     <section className="mt-6 space-y-4 rounded-lg border border-[#354039] bg-[#171d1a] p-5 text-[#f4f1e8] shadow-[0_1px_0_rgba(0,0,0,0.2)]">
       <Field label={editorCopy.title}><Input className={fieldClassName} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
@@ -53,23 +99,57 @@ export function CardEditor({ card, draft = false }: { card: SerializableCard; dr
       <Field label={editorCopy.tags}><Input className={fieldClassName} value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} /></Field>
       <div className="space-y-2 text-sm">
         <div className="font-medium text-[#d8d2c6]">{copy.card.knowledgeConcepts}</div>
-        {card.knowledgeConcepts?.length ? (
-          <div className="flex flex-wrap gap-2 rounded-md border border-[#354039] bg-[#101412] p-3">
-            {card.knowledgeConcepts.map((concept) => (
-              <span
-                key={concept.id}
-                title={concept.evidence ?? concept.description ?? concept.name}
-                className="rounded-md border border-[#354039] bg-[#171d1a] px-2.5 py-1.5 text-xs text-[#d8d2c6]"
-              >
-                {concept.name}
-              </span>
-            ))}
+        <div className="rounded-md border border-[#354039] bg-[#101412] p-3">
+          {concepts.length ? (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {concepts.map((concept) => (
+                <span
+                  key={concept.id}
+                  title={concept.evidence ?? concept.description ?? concept.name}
+                  className="inline-flex items-center gap-2 rounded-md border border-[#354039] bg-[#171d1a] px-2.5 py-1.5 text-xs text-[#d8d2c6]"
+                >
+                  <span>{concept.name}</span>
+                  <button
+                    type="button"
+                    aria-label={`${copy.card.removeKnowledgeConcept}: ${concept.name}`}
+                    disabled={removingConceptId === concept.id}
+                    onClick={() => removeConcept(concept.id)}
+                    className="inline-flex h-4 w-4 items-center justify-center text-[#929c94] hover:text-[#f0c8c8] disabled:opacity-50"
+                  >
+                    <X aria-hidden="true" className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mb-3 text-sm text-[#7f897f]">{cardCopy.noKnowledgeConcepts}</p>
+          )}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              className={fieldClassName}
+              value={conceptInput}
+              maxLength={80}
+              placeholder={cardCopy.knowledgeConceptInputPlaceholder}
+              onChange={(event) => setConceptInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addConcept();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              disabled={isAddingConcept || !conceptInput.trim()}
+              onClick={addConcept}
+              className="gap-2 bg-[#d9e7c6] text-[#172018] hover:bg-[#c7dab0]"
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              {isAddingConcept ? cardCopy.addingKnowledgeConcept : copy.card.addKnowledgeConcept}
+            </Button>
           </div>
-        ) : (
-          <p className="rounded-md border border-[#354039] bg-[#101412] p-3 text-sm text-[#7f897f]">
-            {cardCopy.noKnowledgeConcepts}
-          </p>
-        )}
+          {conceptError ? <p className="mt-2 text-xs text-[#e7a09a]">{conceptError}</p> : null}
+        </div>
       </div>
       <Field label={editorCopy.insights}><Textarea className={fieldClassName} rows={7} value={form.rolePerspectives} onChange={(e) => setForm({ ...form, rolePerspectives: e.target.value })} /></Field>
       <Field label={editorCopy.category}><Input className={fieldClassName} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>

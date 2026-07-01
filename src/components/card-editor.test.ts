@@ -13,6 +13,16 @@ test("card editor displays persisted knowledge concepts", () => {
   assert.ok(editorSource.includes("concept.name"));
 });
 
+test("card editor lets users add and remove knowledge concepts", () => {
+  assert.ok(editorSource.includes("setConcepts"));
+  assert.ok(editorSource.includes("conceptInput"));
+  assert.ok(editorSource.includes("`/api/cards/${card.id}/concepts`"));
+  assert.ok(editorSource.includes("method: \"POST\""));
+  assert.ok(editorSource.includes("method: \"DELETE\""));
+  assert.ok(editorSource.includes("copy.card.addKnowledgeConcept"));
+  assert.ok(editorSource.includes("copy.card.removeKnowledgeConcept"));
+});
+
 test("card detail pages load and serialize knowledge concepts", () => {
   for (const source of [cardPageSource, draftPageSource]) {
     assert.ok(source.includes("cardConcepts"));
