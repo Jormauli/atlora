@@ -10,6 +10,7 @@ export function CardEditor({ card, draft = false }: { card: SerializableCard; dr
   const router = useRouter();
   const { copy } = useLanguage();
   const editorCopy = copy.editor;
+  const cardCopy = copy.card;
   const fieldClassName =
     "border-[#354039] bg-[#101412] text-[#f4f1e8] placeholder:text-[#7f897f] focus:ring-[#d9e7c6]";
   const [form, setForm] = useState({
@@ -50,6 +51,26 @@ export function CardEditor({ card, draft = false }: { card: SerializableCard; dr
       <Field label={editorCopy.summary}><Textarea className={fieldClassName} rows={5} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></Field>
       <Field label={editorCopy.keyPoints}><Textarea className={fieldClassName} rows={8} value={form.keyPoints} onChange={(e) => setForm({ ...form, keyPoints: e.target.value })} /></Field>
       <Field label={editorCopy.tags}><Input className={fieldClassName} value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} /></Field>
+      <div className="space-y-2 text-sm">
+        <div className="font-medium text-[#d8d2c6]">{copy.card.knowledgeConcepts}</div>
+        {card.knowledgeConcepts?.length ? (
+          <div className="flex flex-wrap gap-2 rounded-md border border-[#354039] bg-[#101412] p-3">
+            {card.knowledgeConcepts.map((concept) => (
+              <span
+                key={concept.id}
+                title={concept.evidence ?? concept.description ?? concept.name}
+                className="rounded-md border border-[#354039] bg-[#171d1a] px-2.5 py-1.5 text-xs text-[#d8d2c6]"
+              >
+                {concept.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-md border border-[#354039] bg-[#101412] p-3 text-sm text-[#7f897f]">
+            {cardCopy.noKnowledgeConcepts}
+          </p>
+        )}
+      </div>
       <Field label={editorCopy.insights}><Textarea className={fieldClassName} rows={7} value={form.rolePerspectives} onChange={(e) => setForm({ ...form, rolePerspectives: e.target.value })} /></Field>
       <Field label={editorCopy.category}><Input className={fieldClassName} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
       {card.sourceUrl ? (

@@ -19,11 +19,20 @@ export interface SerializableCard {
   sourceUrl: string | null;
   sourceTitle: string | null;
   sourceDomain: string | null;
+  knowledgeConcepts?: SerializedCardKnowledgeConcept[];
   aiTemplateId: string;
   status: "draft" | "saved" | "archived" | "deleted";
   visibility: "private" | "link_visible" | "public" | "paid";
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SerializedCardKnowledgeConcept {
+  id: string;
+  name: string;
+  description: string | null;
+  relevance: "high" | "medium" | "low";
+  evidence: string | null;
 }
 
 export interface LocalizedCardContentItem {

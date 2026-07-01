@@ -6,10 +6,33 @@ import { prisma } from "@/lib/db/prisma";
 import type { Card } from "@prisma/client";
 import type { SerializableCard } from "@/lib/types";
 
+type CardWithConcepts = Card & {
+  cardConcepts: Array<{
+    relevance: "high" | "medium" | "low";
+    evidence: string | null;
+    concept: {
+      id: string;
+      canonicalName: string;
+      description: string | null;
+    };
+  }>;
+};
+
 export default async function CardDetailPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  const card = await prisma.card.findFirst({ where: { id: params.id, userId: user.id, status: { not: "deleted" } } });
+  const card = await prisma.card.findFirst({
+    where: { id: params.id, userId: user.id, status: { not: "deleted" } },
+    include: {
+      cardConcepts: {
+        include: {
+          concept: {
+            select: { id: true, canonicalName: true, description: true }
+          }
+        }
+      }
+    }
+  });
   if (!card) notFound();
   return (
     <AppShell>
@@ -38,7 +61,7 @@ function Info({ label, value }: { label: string; value: string }) {
   return <div className="mb-4"><div className="text-muted">{label}</div><div className="mt-1 break-words">{value}</div></div>;
 }
 
-function serialize(card: Card): SerializableCard {
+function serialize(card: CardWithConcepts): SerializableCard {
   return {
     ...card,
     keyPoints: card.keyPoints as string[],
@@ -51,6 +74,13 @@ function serialize(card: Card): SerializableCard {
     rolePerspectives: (card.rolePerspectives as string[] | null) ?? [],
     localizedContent: card.localizedContent as SerializableCard["localizedContent"],
     tags: card.tags as string[],
+    knowledgeConcepts: card.cardConcepts.map((item) => ({
+      id: item.concept.id,
+      name: item.concept.canonicalName,
+      description: item.concept.description,
+      relevance: item.relevance,
+      evidence: item.evidence
+    })),
     createdAt: card.createdAt.toISOString(),
     updatedAt: card.updatedAt.toISOString()
   };

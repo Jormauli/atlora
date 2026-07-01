@@ -6,10 +6,33 @@ import { CardEditor } from "@/components/card-editor";
 import type { Card } from "@prisma/client";
 import type { SerializableCard } from "@/lib/types";
 
+type CardWithConcepts = Card & {
+  cardConcepts: Array<{
+    relevance: "high" | "medium" | "low";
+    evidence: string | null;
+    concept: {
+      id: string;
+      canonicalName: string;
+      description: string | null;
+    };
+  }>;
+};
+
 export default async function DraftPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  const card = await prisma.card.findFirst({ where: { id: params.id, userId: user.id, status: "draft" } });
+  const card = await prisma.card.findFirst({
+    where: { id: params.id, userId: user.id, status: "draft" },
+    include: {
+      cardConcepts: {
+        include: {
+          concept: {
+            select: { id: true, canonicalName: true, description: true }
+          }
+        }
+      }
+    }
+  });
   if (!card) notFound();
   return (
     <AppShell>
@@ -19,7 +42,7 @@ export default async function DraftPage({ params }: { params: { id: string } }) 
   );
 }
 
-function serialize(card: Card): SerializableCard {
+function serialize(card: CardWithConcepts): SerializableCard {
   return {
     ...card,
     keyPoints: card.keyPoints as string[],
@@ -32,6 +55,13 @@ function serialize(card: Card): SerializableCard {
     rolePerspectives: (card.rolePerspectives as string[] | null) ?? [],
     localizedContent: card.localizedContent as SerializableCard["localizedContent"],
     tags: card.tags as string[],
+    knowledgeConcepts: card.cardConcepts.map((item) => ({
+      id: item.concept.id,
+      name: item.concept.canonicalName,
+      description: item.concept.description,
+      relevance: item.relevance,
+      evidence: item.evidence
+    })),
     createdAt: card.createdAt.toISOString(),
     updatedAt: card.updatedAt.toISOString()
   };
