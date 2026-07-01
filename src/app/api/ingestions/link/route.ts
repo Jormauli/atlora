@@ -4,7 +4,7 @@ import { linkIngestionSchema } from "@/lib/validators/ingestion";
 import { ingestLink, resolveTemplate } from "@/lib/services/ingestion/service";
 import { getTaskQueue } from "@/lib/services/task-queue";
 import { prisma } from "@/lib/db/prisma";
-import { isWeChatArticleUrl } from "@/lib/services/link-fetcher/wechat";
+import { isWeChatArticleUrl, tryHtmlExtraction } from "@/lib/services/link-fetcher/wechat";
 
 export const maxDuration = 60;
 
@@ -39,6 +39,43 @@ export async function POST(request: Request) {
       stage: "queued"
     }
   });
+  const html = await tryHtmlExtraction(parsed.data.url);
+  if (html) {
+    try {
+      await prisma.ingestionItem.update({
+        where: { id: ingestion.id },
+        data: { status: "processing", stage: "extracting_text", processingStartedAt: new Date() }
+      });
+      await getTaskQueue().enqueueExtracted({
+        ingestionId: ingestion.id,
+        extracted: {
+          title: html.title,
+          text: html.text,
+          strategy: "wechat_markdown",
+          confidence: 1,
+          sourceMetadata: {
+            strategy: "vercel_html",
+            domain: new URL(parsed.data.url).hostname
+          }
+        }
+      });
+      return NextResponse.json({ ingestionId: ingestion.id }, { status: 202 });
+    } catch (error) {
+      console.error(error);
+      await prisma.ingestionItem.update({
+        where: { id: ingestion.id },
+        data: {
+          status: "failed",
+          stage: "failed",
+          failureCode: "QUEUE_UNAVAILABLE",
+          errorMessage: "正文已识别，但生成任务提交失败，请稍后重试。",
+          processingCompletedAt: new Date()
+        }
+      });
+      return NextResponse.json({ error: "正文已识别，但生成任务提交失败，请稍后重试。" }, { status: 500 });
+    }
+  }
+
   try {
     await getTaskQueue().enqueueWeChat({
       ingestionId: ingestion.id,

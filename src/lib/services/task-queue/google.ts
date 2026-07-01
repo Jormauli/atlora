@@ -1,6 +1,7 @@
 import { CloudTasksClient } from "@google-cloud/tasks";
 import type { TaskQueue } from "./types";
 import type { WorkerTask } from "@/lib/services/worker/contracts";
+import { signWorkerRequest } from "@/lib/services/worker/signature";
 
 type TaskClient = {
   createTask(input: Record<string, unknown>): Promise<unknown>;
@@ -11,13 +12,22 @@ export function buildGoogleTaskName(parent: string, ingestionId: string) {
   return `${parent}/tasks/wechat-${safeId}`;
 }
 
+export function buildGoogleExtractedTaskName(parent: string, ingestionId: string) {
+  const safeId = ingestionId.replace(/[^a-zA-Z0-9-]/g, "-");
+  return `${parent}/tasks/extracted-${safeId}`;
+}
+
 export function createGoogleTaskQueue(input: {
   parent: string;
   workerUrl: string;
+  callbackBaseUrl?: string;
+  callbackSecret?: string;
+  vercelBypassSecret?: string;
   serviceAccountEmail: string;
   client: TaskClient;
 }): TaskQueue {
   const workerUrl = input.workerUrl.replace(/\/+$/, "");
+  const callbackBaseUrl = input.callbackBaseUrl?.replace(/\/+$/, "");
   return {
     async enqueueWeChat(payload: WorkerTask) {
       await input.client.createTask({
@@ -36,6 +46,39 @@ export function createGoogleTaskQueue(input: {
           }
         }
       });
+    },
+    async enqueueExtracted(payload) {
+      if (!callbackBaseUrl || !input.callbackSecret) {
+        throw new Error("Callback task configuration is required");
+      }
+      const pathname = `/api/internal/ingestions/${payload.ingestionId}/extracted`;
+      const body = JSON.stringify(payload.extracted);
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signature = signWorkerRequest({
+        secret: input.callbackSecret,
+        method: "POST",
+        pathname,
+        timestamp,
+        ingestionId: payload.ingestionId,
+        body
+      });
+      await input.client.createTask({
+        parent: input.parent,
+        task: {
+          name: buildGoogleExtractedTaskName(input.parent, payload.ingestionId),
+          httpRequest: {
+            httpMethod: "POST",
+            url: `${callbackBaseUrl}${pathname}`,
+            headers: {
+              "Content-Type": "application/json",
+              "x-atlora-timestamp": String(timestamp),
+              "x-atlora-signature": signature,
+              ...(input.vercelBypassSecret ? { "x-vercel-protection-bypass": input.vercelBypassSecret } : {})
+            },
+            body: Buffer.from(body)
+          }
+        }
+      });
     }
   };
 }
@@ -47,6 +90,9 @@ export function googleTaskQueueFromEnvironment(): TaskQueue {
   return createGoogleTaskQueue({
     parent: `projects/${project}/locations/${location}/queues/${queue}`,
     workerUrl: requireEnv("WECHAT_WORKER_URL"),
+    callbackBaseUrl: requireEnv("APP_URL"),
+    callbackSecret: requireEnv("WORKER_CALLBACK_SECRET"),
+    vercelBypassSecret: process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
     serviceAccountEmail: requireEnv("GCP_TASKS_SERVICE_ACCOUNT_EMAIL"),
     client: new CloudTasksClient(cloudTasksClientOptions(process.env.GCP_SERVICE_ACCOUNT_JSON_BASE64)) as unknown as TaskClient
   });

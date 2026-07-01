@@ -23,11 +23,18 @@ test("WeChat async ingestion returns an ingestion id for progress polling", asyn
   assert.match(wechatBranch, /return NextResponse\.json\(\{\s*ingestionId:\s*ingestion\.id\s*\}/);
 });
 
-test("WeChat ingestion does not run card generation inside the user request", async () => {
+test("WeChat ingestion tries fast HTML extraction before falling back to the worker", async () => {
   const source = await readFile(new URL("./route.ts", import.meta.url), "utf8");
   assert.match(source, /export const maxDuration = 60/);
-  assert.doesNotMatch(source, /tryHtmlExtraction/);
-  assert.doesNotMatch(source, /generateCardDraft/);
-  assert.doesNotMatch(source, /createDraftCard/);
+  assert.match(source, /tryHtmlExtraction/);
+  assert.match(source, /enqueueExtracted/);
   assert.match(source, /enqueueWeChat/);
+});
+
+test("WeChat ingestion does not return a direct card from the user request", async () => {
+  const source = await readFile(new URL("./route.ts", import.meta.url), "utf8");
+  const wechatBranch = source.slice(source.indexOf("const templateId = resolveTemplate"));
+  assert.doesNotMatch(wechatBranch, /return NextResponse\.json\(\{\s*card\s*\}\);/);
+  assert.doesNotMatch(source, /createDraftCard/);
+  assert.doesNotMatch(source, /completeWorkerExtraction/);
 });
