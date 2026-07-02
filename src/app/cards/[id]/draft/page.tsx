@@ -36,7 +36,7 @@ export default async function DraftPage({ params }: { params: { id: string } }) 
   if (!card) notFound();
   return (
     <AppShell>
-      <h1 className="text-2xl font-semibold">确认卡片草稿</h1>
+      <h1 className="break-words text-2xl font-semibold">确认卡片草稿</h1>
       <CardEditor card={serialize(card)} draft />
     </AppShell>
   );

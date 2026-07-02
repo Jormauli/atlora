@@ -36,13 +36,13 @@ export default async function CardDetailPage({ params }: { params: { id: string 
   if (!card) notFound();
   return (
     <AppShell>
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div>
-          <h1 className="text-2xl font-semibold">{card.title}</h1>
-          <p className="mt-3 text-muted">{card.summary}</p>
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-semibold">{card.title}</h1>
+          <p className="mt-3 break-words text-muted">{card.summary}</p>
           <CardEditor card={serialize(card)} />
         </div>
-        <aside className="rounded-lg border border-[#354039] bg-[#171d1a] p-5 text-sm text-[#f4f1e8] shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+        <aside className="min-w-0 rounded-lg border border-[#354039] bg-[#171d1a] p-5 text-sm text-[#f4f1e8] shadow-[0_1px_0_rgba(0,0,0,0.2)]">
           <Info label="分类" value={card.category} />
           <Info label="标签" value={(card.tags as string[]).join("、") || "-"} />
           <Info label="卡片类型" value={card.cardType} />
