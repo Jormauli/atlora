@@ -137,6 +137,20 @@ function NewMaterialContent() {
     pendingUrl.searchParams.set("tab", "link");
     window.history.replaceState(null, "", pendingUrl);
   }
+  async function pasteCurrentLink() {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      const normalizedUrl = normalizeClipboardUrl(clipboardText);
+      if (!normalizedUrl) {
+        setError(copy.newMaterial.clipboardNotUrl);
+        return;
+      }
+      setLinkUrl(normalizedUrl);
+      setError("");
+    } catch {
+      setError(copy.newMaterial.clipboardUnavailable);
+    }
+  }
   async function submitImage(formData: FormData) {
     setLoading(true);
     setLoadingLabel(copy.newMaterial.recognizing);
@@ -209,7 +223,30 @@ function NewMaterialContent() {
         )}
         {tab === "link" && (
           <form onSubmit={submitLink} className="mt-5 space-y-4">
-            <Input name="url" type="url" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder={copy.newMaterial.urlPlaceholder} required className="border-[#2f2f2f] bg-[#111111] text-[#f3f3f1] placeholder:text-[#767672] focus:ring-[#4f6f8f]" />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                name="url"
+                type="url"
+                value={linkUrl}
+                onChange={(event) => setLinkUrl(event.target.value)}
+                placeholder={copy.newMaterial.urlPlaceholder}
+                required
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                inputMode="url"
+                className="border-[#2f2f2f] bg-[#111111] text-[#f3f3f1] placeholder:text-[#767672] focus:ring-[#4f6f8f]"
+              />
+              <Button
+                type="button"
+                disabled={loading}
+                onClick={pasteCurrentLink}
+                className="shrink-0 border border-[#2f2f2f] bg-[#111111] leading-none text-[#d8d8d5] hover:bg-white/[0.06] sm:min-w-32"
+              >
+                {copy.newMaterial.pasteCurrentLink}
+              </Button>
+            </div>
             <Button disabled={loading} className="border border-[#4f6f8f] bg-[#e7e7e3] leading-none text-[#111111] hover:bg-white">{loading ? copy.newMaterial.reading : copy.newMaterial.generateLink}</Button>
             {loading ? <LinkIngestionProgress stage={ingestionStage} stages={stageSets.link} elapsedMs={loadingElapsedMs} waitedLabel={copy.newMaterial.stages.waited} /> : null}
           </form>
@@ -230,6 +267,17 @@ function nextPaint() {
   return new Promise<void>((resolve) => {
     requestAnimationFrame(() => resolve());
   });
+}
+
+function normalizeClipboardUrl(value: string) {
+  const trimmed = value.trim();
+  try {
+    const url = new URL(trimmed);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 type LoadingStage = { label: string; detail: string; afterMs: number };

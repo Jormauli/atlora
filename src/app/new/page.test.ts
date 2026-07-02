@@ -30,3 +30,18 @@ test("link ingestion uses submit event state updates so progress renders before 
   assert.ok(pageSource.includes("event.preventDefault()"));
   assert.ok(pageSource.includes("<form onSubmit={submitLink}"));
 });
+
+test("link input discourages stale browser suggestions", () => {
+  assert.ok(pageSource.includes("autoComplete=\"off\""));
+  assert.ok(pageSource.includes("autoCorrect=\"off\""));
+  assert.ok(pageSource.includes("autoCapitalize=\"none\""));
+  assert.ok(pageSource.includes("spellCheck={false}"));
+  assert.ok(pageSource.includes("inputMode=\"url\""));
+});
+
+test("link tab offers an explicit clipboard paste action", () => {
+  assert.ok(pageSource.includes("pasteCurrentLink"));
+  assert.ok(pageSource.includes("navigator.clipboard.readText()"));
+  assert.ok(pageSource.includes("copy.newMaterial.pasteCurrentLink"));
+  assert.ok(pageSource.includes("copy.newMaterial.clipboardNotUrl"));
+});
